@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. The README explains the data format and how to add a
+Thanks for helping. The [documentation](docs/index.mdx) explains the data format and how to add a
 component or a template; this file covers the process.
 
 ## Developer Certificate of Origin
@@ -23,7 +23,7 @@ existing branch: `git rebase --signoff main`, then force-push.
   isolation.
 - Explain why a component is recommended in its `metadata.description`, and
   why each value is set in a comment next to it.
-- A template meets the [template standards](docs/template-standards.md).
+- A template meets the [template standards](docs/reference/template-standards.mdx).
 - Never copy secrets, account IDs, domains, IP addresses or cloud-specific
   settings into values.
 - Do not edit `measurements/`; CI writes it.

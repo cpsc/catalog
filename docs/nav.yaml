@@ -1,0 +1,10 @@
+# The pages the site publishes, in this order. index.mdx is the home page.
+- group: get-started
+  label: Get started
+  pages: [deploy-a-template]
+- group: reference
+  label: Reference
+  pages: [components, templates, distributions, component-format, template-format, template-standards, releases, licenses]
+- group: contribute
+  label: Contribute
+  pages: [add-component, add-template, tests]

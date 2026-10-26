@@ -1,0 +1,62 @@
+---
+title: 範本清單
+description: 查找應用程式範本與分類，選擇要部署到單一 Namespace 的應用程式。
+source: "241275056163"
+---
+
+專案成員可以選擇範本，將應用程式安裝到單一 Namespace。每個範本固定映像檔、設定資源要求與上限，並在可行時採用 Restricted Pod Security Standard 執行。範本也會說明擴充與備份方式，以及升級前要確認的事項，並用 `requires` 指名需要的元件。
+
+## 範本清單
+
+| ID | 應用程式 | 分類 |
+| --- | --- | --- |
+| `browserless` | Browserless | automation |
+| `cliproxyapi` | CLIProxyAPI | ai |
+| `dify` | Dify | ai |
+| `error-pages` | Error pages | web-servers |
+| `ghost` | Ghost | cms |
+| `gitea` | Gitea | developer-tools |
+| `halo` | Halo | cms |
+| `hermes-agent` | Hermes Agent | ai、automation |
+| `librechat` | LibreChat | ai |
+| `litellm` | LiteLLM | ai |
+| `lobechat` | LobeChat | ai |
+| `meilisearch` | Meilisearch | search |
+| `memos` | Memos | productivity |
+| `miniflux` | Miniflux | productivity |
+| `n8n-ai-brain` | n8n (AI Brain) | ai、automation |
+| `n8n-sqlite` | n8n SQLite | automation |
+| `n8n` | n8n PostgreSQL | automation |
+| `new-api` | New API | ai |
+| `nginx` | nginx | web-servers |
+| `ntfy` | ntfy | developer-tools |
+| `ollama` | Ollama | ai |
+| `open-webui` | Open WebUI | ai |
+| `openclaw-browser-sandbox` | OpenClaw Browser Sandbox | ai、automation |
+| `openclaw` | OpenClaw | ai |
+| `openlist` | OpenList | storage |
+| `postgresql-pgvector` | PostgreSQL with pgvector | databases |
+| `qdrant` | Qdrant | databases、ai |
+| `searxng` | SearXNG | search |
+| `sillytavern` | SillyTavern | ai |
+| `umami` | Umami | analytics |
+| `uptime-kuma` | Uptime Kuma | monitoring |
+| `vaultwarden` | Vaultwarden | security |
+| `wordpress` | WordPress | cms |
+
+## 分類
+
+- `ai`
+- `analytics`
+- `automation`
+- `cms`
+- `databases`
+- `developer-tools`
+- `monitoring`
+- `productivity`
+- `search`
+- `security`
+- `storage`
+- `web-servers`
+
+選好範本後，依照[部署範本](../get-started/deploy-a-template.mdx)的步驟手動安裝。

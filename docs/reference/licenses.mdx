@@ -1,0 +1,27 @@
+---
+title: Licensing
+description: Check the licenses for Zeabur Catalog tools, components, and templates, and the declaration used for contributions.
+---
+
+When you use Zeabur Catalog tools, components, or templates, check their license information to confirm the applicable terms. Tools and original files use `Apache-2.0`. Upstream projects, applications, images, and charts retain their original licenses, listed in `metadata.license`.
+
+## Component licenses
+
+Each component's `metadata.license` must use an OSI-approved SPDX license identifier. The allowed identifiers appear in [config/licenses.yaml](https://github.com/zeabur-oss/catalog/blob/main/config/licenses.yaml). This list was generated from the SPDX License List 3.29.0.
+
+The `optInOnly` list permits the following source-available licenses as exceptions:
+
+| Component | License |
+| --- | --- |
+| Dragonfly | `BUSL-1.1` |
+| Percona Server for MongoDB | `SSPL-1.0` |
+
+These components must be marked as optional (`optional`) or `unsupported` and must not be enabled by default. `index.json` lists these licenses in `nonOSILicenses` so installation tools can display them before installation.
+
+## Template license notices
+
+When a template packages software under a source-available license, such as `BUSL-1.1` or SSPL, include the exact license name and a link to the license in the template description. Templates must not require users to enter a string to accept a license.
+
+## Contribution declaration
+
+Contributions use the [Developer Certificate of Origin](https://developercertificate.org/). See [CONTRIBUTING.md](https://github.com/zeabur-oss/catalog/blob/main/CONTRIBUTING.md) for contribution instructions.

@@ -1,0 +1,69 @@
+---
+title: 新增範本
+description: 建立符合範本標準的範本，完成本機檢查並提交 Pull Request。
+source: "c4a5cf21771e"
+---
+
+參考類似的範本建立檔案，加入煙霧測試（smoke check）並完成本機檢查，再提交 Pull Request。
+
+<Steps>
+
+<Step>
+
+### 建立範本檔案
+
+參考類似的範本，建立 `templates/<id>/template.yaml` 和 `manifests.yaml`。檔案結構見[範本檔案格式](../reference/template-format.mdx)。
+
+範本 ID 使用小寫單字，以連字號連接，長度最多 49 個字元。
+
+</Step>
+
+<Step>
+
+### 符合範本標準
+
+依照[範本標準](../reference/template-standards.mdx)檢查範本：
+
+- 固定映像檔版本。
+- 符合 Restricted Pod Security。
+- 為沒有登入功能的服務加入入站 NetworkPolicy。
+- 設定資源上限。
+- 為有狀態的資料提供備份。
+- 如實說明擴展限制。
+
+</Step>
+
+<Step>
+
+### 加入煙霧測試
+
+加入資源條件檢查，以及 HTTP 或 SQL 檢查，確認應用程式會回應。
+
+</Step>
+
+<Step>
+
+### 在本機檢查
+
+準備 `values.json`。內容須為 JSON 物件，並為範本要求的每個輸入提供值。
+
+執行以下指令：
+
+```sh
+go run ./tools/cmd/catalog validate
+go run ./tools/cmd/catalog template lint -values values.json \
+  -domain app.example.test -cluster-issuer letsencrypt <id>
+go run ./tools/cmd/catalog e2e -tier l2 <id>
+```
+
+</Step>
+
+<Step>
+
+### 提交 Pull Request
+
+使用 `git commit -s` 建立附有簽署聲明的 commit，再提交 Pull Request。
+
+</Step>
+
+</Steps>

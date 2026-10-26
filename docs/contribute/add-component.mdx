@@ -1,0 +1,60 @@
+---
+title: Add a component
+description: Create a component file, pass local checks, and submit a pull request with signed-off commits.
+---
+
+Choose a capability and an upstream project, create a component file, run local checks, and submit a pull request. When you're done, you'll have a component file that passes the checks and a pull request.
+
+## Before you begin
+
+- Use `nix develop` to get Go, Helm, kubectl, kubeconform, etcd, kube-apiserver, and kind.
+- L1 and L2 checks also require Docker on Linux.
+
+<Steps>
+
+<Step>
+
+### Choose a capability and an upstream project
+
+Choose a capability (a category of functionality) and an upstream project with an OSI-approved license. Prefer CNCF or Kubernetes SIG projects.
+
+If the license is `optInOnly` (`SSPL-1.0`), every profile must mark the component as `optional` or `unsupported`.
+
+</Step>
+
+<Step>
+
+### Create a component file
+
+Use a similar component file as a reference to create `components/<capability>/<upstream>.yaml`.
+
+Specify configuration values for each of the two profiles (configuration sets), `single-node` and `multi-node`, and add a comment for each profile explaining the choice.
+
+</Step>
+
+<Step>
+
+### Run local checks
+
+Run the following commands:
+
+```sh
+go run ./tools/cmd/catalog validate          # schema, license, references, comments
+go run ./tools/cmd/catalog render            # helm template + kubeconform
+go run ./tools/cmd/catalog e2e -tier l0      # what every pull request runs
+go run ./tools/cmd/catalog e2e -tier l2 <id>
+```
+
+`validate` checks the schema, license, references, and comments. `render` runs `helm template` and kubeconform. Every pull request runs L0 checks.
+
+</Step>
+
+<Step>
+
+### Submit a pull request
+
+Use `git commit -s` to create a signed-off commit, then open a pull request.
+
+</Step>
+
+</Steps>

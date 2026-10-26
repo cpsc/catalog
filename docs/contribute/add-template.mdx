@@ -1,0 +1,68 @@
+---
+title: Add a template
+description: Create a template that meets the template standards, run local checks, and submit a pull request.
+---
+
+Use a similar template as a reference to create the files, add a smoke check, and run local checks before submitting a pull request.
+
+<Steps>
+
+<Step>
+
+### Create the template files
+
+Use a similar template as a reference to create `templates/<id>/template.yaml` and `manifests.yaml`. See [Template file format](../reference/template-format.mdx) for the file structure.
+
+Use lowercase words separated by hyphens for the template ID, with a maximum length of 49 characters.
+
+</Step>
+
+<Step>
+
+### Meet the template standards
+
+Check the template against the [Template standards](../reference/template-standards.mdx):
+
+- Pin image versions.
+- Meet Restricted Pod Security requirements.
+- Add an ingress NetworkPolicy for services without a login feature.
+- Set resource limits.
+- Provide backups for stateful data.
+- Document scaling limitations accurately.
+
+</Step>
+
+<Step>
+
+### Add a smoke check
+
+Add resource condition checks and HTTP or SQL checks to confirm that the application responds.
+
+</Step>
+
+<Step>
+
+### Run local checks
+
+Prepare `values.json`. It must contain a JSON object with a value for every input the template requires.
+
+Run the following commands:
+
+```sh
+go run ./tools/cmd/catalog validate
+go run ./tools/cmd/catalog template lint -values values.json \
+  -domain app.example.test -cluster-issuer letsencrypt <id>
+go run ./tools/cmd/catalog e2e -tier l2 <id>
+```
+
+</Step>
+
+<Step>
+
+### Submit a pull request
+
+Use `git commit -s` to create a commit with a sign-off, then submit a pull request.
+
+</Step>
+
+</Steps>

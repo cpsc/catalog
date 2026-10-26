@@ -1,0 +1,46 @@
+---
+title: 开始使用 Zeabur Catalog
+description: 经过测试的 Kubernetes 组件与应用模板，附版本、配置与安装方式。
+source: "db9fbcaf722c"
+---
+
+Zeabur Catalog 是一份在 CI 中实际安装并测试过的数据，分为组件和模板两部分。每次发布都会提供一个签名的包，任何工具都能读取它，生成 `helm install` 命令、Flux 或 Argo CD 清单、k3s 的 `HelmChart` 对象，或安装模板。
+
+- **组件**由集群管理员在每个集群安装一次，例如 Ingress、证书、指标和数据库 operator。每种用途都写明采用哪个上游 chart、哪个版本、哪些配置，以及原因。
+- **模板**由项目成员安装到单个 Namespace，例如 n8n、Dify、WordPress 和 PostgreSQL。模板固定镜像，设置资源请求与限制，在可行时遵循 Restricted Pod Security Standard 运行，并说明如何扩容、备份数据，以及升级前要检查什么。模板用 `requires` 指定需要的组件。
+
+## 我想部署一个模板
+
+验证版本的签名，渲染模板的对象，生成密码并应用到集群。
+
+[用 catalog 命令部署模板](get-started/deploy-a-template.mdx)
+
+## 我想知道有哪些内容
+
+[组件列表](reference/components.mdx)列出每个组件在单节点与多节点的默认状态，[模板列表](reference/templates.mdx)列出所有应用模板。不同 Kubernetes 发行版的差异见[各发行版的差异](reference/distributions.mdx)。
+
+## 我想在自己的工具中读取 catalog
+
+固定一个版本，验证签名，再读取 `index.json`。见[版本与包](reference/releases.mdx)，文件格式见[组件文件格式](reference/component-format.mdx)与[模板文件格式](reference/template-format.mdx)。
+
+## 我想新增组件或模板
+
+先看[新增组件](contribute/add-component.mdx)或[新增模板](contribute/add-template.mdx)，模板要符合[模板标准](reference/template-standards.mdx)。CI 的检查内容见[测试与 CI](contribute/tests.mdx)。
+
+## 文件怎么放
+
+```text
+components/<capability>/<upstream>.yaml   一個用途搭配一個上游，一個檔案
+templates/<id>/template.yaml              一個應用程式：輸入、服務、安全性、擴充、煙霧測試
+templates/<id>/manifests.yaml             它的 Kubernetes 物件
+schema/v1/                                兩種檔案的 JSON Schema
+config/licenses.yaml                      OSI 核准的 SPDX 識別碼，以及只能選擇啟用的例外
+config/kubernetes.yaml                    Kubernetes 版本，以及 e2e 用的 kind 節點版本
+config/budget.yaml                        單節點的記憶體預算（MiB）
+config/e2e.yaml                           只給測試用的值
+measurements/                             閒置記憶體與 CPU，由 CI 寫入
+tools/                                    `catalog` 指令（Go）
+docs/                                     這份文件
+```
+
+路径就是 ID：`components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`，`templates/n8n/` 的 ID 是 `n8n`。

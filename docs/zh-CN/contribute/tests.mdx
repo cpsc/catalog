@@ -1,0 +1,203 @@
+---
+title: 测试与 CI
+description: 了解各层 CI 的运行时机和检查内容，并配置模板测试输入。
+source: "813a0ee78be7"
+---
+
+L0 在每个 pull request 中运行；L1 在合并队列中和合并到 `main` 后运行；L2 在每晚（nightly）和发布前（release 工作流）运行。各层分工检查，前一层未覆盖的项目会在后续层级运行。你也可以用 `catalog e2e -tier l0|l1|l2` 运行与 CI 相同的测试。
+
+## 开始前
+
+- L0 不需要 Docker。
+- L1 和 L2 会创建 kind 集群，需要 Linux 和 Docker。加上 `-cluster current`，就会改用 `KUBECONFIG` 指定的集群。
+- 运行 KubeSolo 测试需要 Linux 主机和 root 权限。
+
+常规测试使用 `single-node` 或 `multi-node` profile，也就是各自的配置组合。
+
+## L0：检查每个 pull request
+
+`ci.yml` 用单个 job 按顺序运行以下检查。
+
+<Steps>
+
+<Step>
+
+### 运行 Go 测试
+
+运行 Go 测试。
+
+</Step>
+
+<Step>
+
+### 验证文件和模板需求
+
+按照各文件的 schema 验证所有文件，并确认每个模板的 `requires` 都能在两种 profile 下解析。
+
+</Step>
+
+<Step>
+
+### 检查组件许可证
+
+拒绝未经 OSI 批准的组件许可证。例外必须同时满足以下条件：
+
+- 许可证列在 [`config/licenses.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/licenses.yaml) 的 `optInOnly` 中。
+- 没有任何 profile 将该组件列为默认启用（recommended）。
+
+</Step>
+
+<Step>
+
+### 检查 profile 渲染结果
+
+每种 profile 各渲染两次，两次输出必须完全一致。
+
+接着，针对 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 列出的每个 Kubernetes 版本，用 kubeconform 验证输出。自定义资源会按照同次渲染的 CRD 验证。
+
+</Step>
+
+<Step>
+
+### 检查模板渲染结果
+
+使用测试输入渲染每个模板，再检查安全规则、上游 Pod Security 规则和 kubeconform 验证结果。
+
+</Step>
+
+<Step>
+
+### 交给 API server 验证
+
+从 [`flake.nix`](https://github.com/zeabur-oss/catalog/blob/main/flake.nix) 启动 etcd 和 kube-apiserver，使用 Zeabur Installer 固定的 Kubernetes 版本，并且只加载渲染出的 CRD。
+
+接着，用 `kubectl apply --dry-run=server` 将两种 profile 的所有组件和所有模板渲染结果发送到 API server。API server 会检查字段、默认值、CEL 规则和 Pod Security，不会运行工作负载。
+
+每个模板的 Namespace 都会按自身的 enforce 级别生成警告。只要出现警告，该模板的测试就会失败。
+
+</Step>
+
+</Steps>
+
+## L1：测试变更影响的组件和模板
+
+`ci.yml` 在合并队列中和合并到 `main` 后，会在单节点 amd64 kind 集群中安装以下项目，再运行冒烟测试（smoke check）：
+
+- 有变更的组件和模板。
+- 会安装变更组件的组件和模板。
+
+共用依赖组件的测试会共用集群，依赖组件在每个集群中只安装一次。组件完成冒烟测试后就会卸载，除非同一集群后续的测试仍需要它。
+
+只要变更涉及 `config/`、`tools/`、flake 或工作流，L1 就会测试所有项目。
+
+## L2：测试升级、资源用量和清理
+
+`nightly.yml` 和 `release.yml` 会调用 `e2e.yml`，在每晚和每次发布前运行 L2。
+
+L2 会在 amd64 和 arm64 上，为每个组件、每种 profile 创建新的 kind 集群。`single-node` 使用单节点，`multi-node` 使用三节点。
+
+<Steps>
+
+<Step>
+
+### 安装依赖组件并测试升级
+
+先安装依赖组件。
+
+如果最新发布版本中的组件版本与待测版本不同，就先安装最新发布版本中的版本，再升级到待测版本。
+
+</Step>
+
+<Step>
+
+### 测量空闲资源用量
+
+每隔 10 秒采样一次空闲内存和 CPU 用量，直到连续五个样本一致，最多测量 3 分钟。
+
+</Step>
+
+<Step>
+
+### 运行冒烟测试并卸载
+
+运行冒烟测试，再卸载组件。只要有任何残留项，测试就会失败。
+
+</Step>
+
+</Steps>
+
+### 需要额外凭据的组件
+
+[`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 的 `unready` 列出需要 CI 未持有凭据的组件。
+
+L2 安装这些组件时不等待就绪，接着运行冒烟测试并卸载，不测量资源用量。
+
+### 模板和资源预算
+
+L2 会在单节点 amd64 集群中安装每个模板及其需要的组件，运行冒烟测试，再用相同的采样方式测量模板 Namespace 内 Pod 的空闲内存和 CPU 用量。
+
+模板测量结果存放在 `measurements/templates/<id>.json`。
+
+L2 也会检查 amd64 上 `single-node` profile 的默认启用组件总用量，确认符合 [`config/budget.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/budget.yaml) 的预算。
+
+`nightly.yml` 会创建 pull request，更新 `measurements/`。你也可以手动运行这个工作流，立即获取测量结果。Renovate 则会针对每个新的上游版本和镜像 digest 创建 pull request。
+
+### KubeSolo 测试
+
+使用 `-profile kubesolo` 时，测试会在 Linux 主机上安装 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 固定的 KubeSolo 和 helm-controller 版本，并核对校验和。
+
+接着，测试会使用 `single-node` 的配置值，针对该文件列出的 capability（用途类别）运行 L2：`ingress`、`certificates` 和 `container-registry`。
+
+KubeSolo 测试不运行模板，因为模板需要 NetworkPolicy。组件的 `distributions` 如果未列出 `kubesolo`，也不会运行。
+
+测量结果与 kind 的结果放在一起，以 `kubesolo-<architecture>-<version>` 作为标识键。
+
+## 配置模板测试输入
+
+模板测试从 [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 获取输入值，不需要仓库 secrets，因此 pull request 也会完整运行模板测试。
+
+<Steps>
+
+<Step>
+
+### 配置共享和单独输入
+
+在 `config/e2e.yaml` 中配置：
+
+- `templateInputs`：提供给所有声明该输入的模板。
+- `templates.<id>`：提供给单个模板的输入值、测试前要先应用到 `templates-e2e-<id>` 的对象，以及要跳过的冒烟测试和原因。预先应用的对象可以包含输入值指定的 Secret。
+
+所有值都是可丢弃的测试数据。
+
+</Step>
+
+<Step>
+
+### 配置对象存储测试数据
+
+只要输入值使用 `.S3`，测试就会在 `templates-e2e-s3` 启动 SeaweedFS（`object-storage/seaweedfs-operator`），使用测试 CA，并在 TCP 443 提供 HTTPS。备份和对象存储数据都会发送到这里。
+
+模板 Namespace 内的 `e2e-s3` Secret 会保存访问凭据，以及名为 `ca.crt` 的 CA 证书。
+
+模板使用 `backupCASecret` 这类可选输入接收 CA。无法使用自定义 CA 的模板只会跳过对应的冒烟测试。
+
+要改用其他存储服务，修改 `config/e2e.yaml` 中该模板的输入值。
+
+</Step>
+
+</Steps>
+
+## 确认结果
+
+每个层级都会输出各阶段的耗时。L0 会启动自己的 API server；L1 和 L2 会创建自己的 kind 集群，各自使用独立的 kubeconfig。
+
+测试结束后，各层级会删除自己创建的测试环境。加上 `-keep` 可保留环境。
+
+## 遇到问题
+
+| 界面或结果 | 接下来怎么处理 |
+| --- | --- |
+| L0 因模板 Namespace 的 Pod Security 警告而失败 | 按照警告修正模板。警告会让模板测试失败。 |
+| 组件列在 `unready`，没有资源测量结果 | 检查 `config/e2e.yaml`。这些组件需要 CI 未持有的凭据，测试不测量资源用量。 |
+| KubeSolo 没有运行某个组件 | 检查组件的 `distributions` 是否包含 `kubesolo`。 |
+| 需要让节点从镜像站拉取镜像 | 配置 `ZEABUR_REGISTRY_MIRRORS`，值的格式为 `docker.io=http://mirror:5001,ghcr.io=...`。 |

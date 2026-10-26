@@ -1,0 +1,3 @@
+# Old path: new path, both without .md. Add a line when a published page moves or is removed.
+deploy-a-template: get-started/deploy-a-template
+template-standards: reference/template-standards

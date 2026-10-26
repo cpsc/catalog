@@ -1,0 +1,46 @@
+---
+title: 组件列表
+description: 查看各组件的上游、单节点与多节点默认状态，以及使用限制。
+source: "e09fc4f50cf0"
+---
+
+组件是集群管理员在每个集群安装一次的软件。Zeabur Catalog 按 capability（用途类别）列出采用的上游 chart、版本、配置和选择原因。你可以通过下表查看各组件在单节点与多节点的默认状态。
+
+各 profile（`single-node` 或 `multi-node` 的配置组合）使用以下状态：
+
+- 默认启用（`recommended`）：默认开启。
+- 可选（`optional`）：提供选项，但默认关闭。
+- 不支持（`unsupported`）：不提供选项。
+
+各组件文件的 `detection` 规则会找出现有安装，供系统复用。
+
+| Capability | 上游 | 单节点 | 多节点 | 备注 |
+| --- | --- | --- | --- | --- |
+| certificates | cert-manager | 默认启用 | 默认启用 | |
+| config-reload | Stakater Reloader | 可选 | 可选 | |
+| container-registry | zot | 可选 | 可选 | |
+| databases | CloudNativePG | 可选 | 可选 | |
+| databases | Dragonfly Operator | 可选 | 可选 | 服务器许可证为 `BUSL-1.1`，需自行选择启用 |
+| databases | MariaDB Operator | 可选 | 可选 | |
+| databases | MOCO | 可选 | 可选 | |
+| databases | Percona Operator for MongoDB | 可选 | 可选 | 服务器许可证为 `SSPL-1.0`，需自行选择启用 |
+| event-autoscaling | KEDA HTTP Add-on | 可选 | 可选 | `beta` |
+| event-autoscaling | KEDA | 可选 | 默认启用 | |
+| external-secrets | External Secrets Operator | 可选 | 可选 | |
+| image-updates | Keel | 可选 | 可选 | |
+| ingress | Traefik Proxy | 默认启用 | 默认启用 | |
+| intrusion-prevention | CrowdSec | 可选 | 可选 | |
+| logs | VictoriaLogs | 默认启用 | 默认启用 | |
+| metrics | Kubernetes Metrics Server | 默认启用 | 默认启用 | |
+| metrics | VictoriaMetrics (k8s stack) | 默认启用 | 默认启用 | |
+| node-updates | System Upgrade Controller | 默认启用 | 默认启用 | 仅限 `k3s`、`rke2` |
+| object-storage | SeaweedFS Operator | 可选 | 可选 | `beta` |
+| observability-operator | VictoriaMetrics operator | 默认启用 | 默认启用 | |
+| remote-access | Tailscale Kubernetes operator | 可选 | 可选 | |
+| replicated-storage | Longhorn | 可选 | 默认启用 | |
+| resource-recommendations | Vertical Pod Autoscaler (recommender only) | 可选 | 可选 | |
+| runtime-security | Falco | 可选 | 可选 | |
+| uptime-probes | Prometheus Blackbox Exporter | 可选 | 默认启用 | |
+| volume-backup | K8up | 可选 | 可选 | |
+| volume-backup | Velero | 可选 | 可选 | 仅限管理员 |
+| vulnerability-scanning | Trivy Operator | 可选 | 可选 | |

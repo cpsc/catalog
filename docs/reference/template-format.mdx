@@ -1,0 +1,55 @@
+---
+title: Template file format
+description: Learn the fields in template.yaml and the substitution rules for manifests.yaml to write template files.
+---
+
+A template consists of `template.yaml` and `manifests.yaml`. Define template information in `template.yaml`, and use the permitted field substitutions in `manifests.yaml`.
+
+## template.yaml
+
+The following is a minimal example. For the complete list of fields, see the [template schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/template.schema.json). For template requirements, see [Template standards](./template-standards.mdx).
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Template
+metadata:
+  name: PostgreSQL
+  description: PostgreSQL 18 managed by CloudNativePG, with Barman Cloud WAL archiving and scheduled base backups.
+  license: PostgreSQL AND Apache-2.0
+  homepage: https://www.postgresql.org/
+  icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+  categories: [databases]
+
+requires: [databases/cloudnative-pg]
+
+services:                         # the workloads in manifests.yaml
+  - name: postgresql
+    securityProfile: restricted   # or baseline, with baselineJustification
+    ports: [{name: postgresql, port: 5432}]
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
+
+inputs:
+  - name: backupDestination       # the person installing gives it
+    description: Dedicated S3 bucket and unique prefix for this cluster.
+    required: true
+    validation: {pattern: '^s3://[a-z0-9][a-z0-9.-]+/[A-Za-z0-9/_-]+$'}
+  # From n8n: the installer generates this value into a Secret.
+  # - name: encryptionKey
+  #   generate: random
+  #   secret: {name: n8n-secrets, key: encryption-key}
+
+security: {...}      # summary, risks with mitigations, unauthenticated services
+scalability: {...}   # replica range and what blocks more
+upgradeNotes: []     # what an upgrade needs
+smoke: []            # resource condition, then an HTTP or SQL check
+```
+
+## manifests.yaml
+
+`manifests.yaml` supports only field substitution, with the following rules:
+
+- The only permitted substitution fields are `{{ .Namespace }}`, `{{ .Domain }}`, `{{ .ClusterIssuer }}`, and `{{ .Inputs.<name> }}` for input values that aren't automatically generated.
+- Conditions, functions, pipelines, and whitespace-trimming markers aren't permitted.
+- Missing input values use `default`; without a `default`, the value is empty.
+- When a template needs options, use input fields with a `default`.
+- Rendered objects must reference a Secret and must not contain automatically generated values.

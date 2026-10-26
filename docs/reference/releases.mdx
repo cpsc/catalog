@@ -1,0 +1,79 @@
+---
+title: Releases and bundles
+description: Pin a Zeabur Catalog version, verify Sigstore signatures, and read index.json, or build release artifacts from a specific commit.
+---
+
+Pushing a `vX.Y.Z` tag publishes `index.json`, `bundle.tar.gz`, `checksums.txt`, and a Sigstore signature bundle for each file. Tools that use Zeabur Catalog should pin a version and verify it before reading `index.json`.
+
+## Release artifacts
+
+| File | Contents |
+| --- | --- |
+| `index.json` | All components, their installation order and measurements for each profile, the components enabled by default (recommended) for each capability, all templates and their measurements, resource budgets, and Kubernetes versions. A profile is a configuration for `single-node` or `multi-node`; a capability is a category of use cases. |
+| `bundle.tar.gz` | A bundle containing the index, cross-check data, components, templates, and related files. |
+| `checksums.txt` | File checksums. |
+
+Each release file has a cosign keyless Sigstore signature bundle. The bundle for `index.json` is named `index.json.sigstore.json`.
+
+## Verify and read a release
+
+<Steps>
+
+<Step>
+
+### Pin a version and verify the signature
+
+The tool first pins the version to use, then verifies the file. The following command verifies `index.json`:
+
+```sh
+cosign verify-blob index.json --bundle index.json.sigstore.json \
+  --certificate-identity-regexp '^https://github.com/zeabur-oss/catalog/.github/workflows/release.yml@refs/tags/v' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+</Step>
+
+<Step>
+
+### Read the index and generate installation content
+
+After verification, the tool reads `index.json`. Only incompatible changes affect `indexVersion`.
+
+When installing components, the tool runs `detection`, offers the components enabled by default (recommended) for the cluster's profile, and collects each component's `inputs` from the user. It then generates installation content according to `installOrder` and merges `contributes` into the corresponding targets.
+
+When deploying a template, the tool checks that the cluster meets all requirements listed in `requires`, collects template inputs from the user, and writes the remaining automatically generated values to a Secret. It then renders and applies `manifests.yaml` for the project's Namespace.
+
+For deployment instructions, see [Deploy a template](../get-started/deploy-a-template.mdx).
+
+</Step>
+
+</Steps>
+
+## Build release artifacts from a commit
+
+Run this command at any commit:
+
+```sh
+nix build .#release
+```
+
+As defined in `flake.nix`, the `release` output includes:
+
+- `index.json`
+- `crosscheck.json`
+- `bundle.tar.gz`
+- `checksums.txt`
+
+The `bundle.tar.gz` file contains:
+
+- `index.json`
+- `crosscheck.json`
+- `components/`
+- `templates/`
+- `schema/`
+- `config/`
+- `measurements/`
+- `LICENSE`
+- `README.md`
+
+This command builds artifacts that are byte-for-byte identical to the release artifacts. Tools can build from an unreleased commit, then compare the artifacts with the signed release after that commit is released.

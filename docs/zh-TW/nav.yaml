@@ -1,0 +1,21 @@
+- group: get-started
+  label: 開始使用
+  pages:
+    deploy-a-template: 用 catalog 指令部署範本
+- group: reference
+  label: 參考
+  pages:
+    components: 元件清單
+    templates: 範本清單
+    distributions: 各 Kubernetes 發行版的差異
+    component-format: 元件檔案格式
+    template-format: 範本檔案格式
+    template-standards: 範本標準
+    releases: 版本與套件包
+    licenses: 授權
+- group: contribute
+  label: 貢獻
+  pages:
+    add-component: 新增元件
+    add-template: 新增範本
+    tests: 測試與 CI

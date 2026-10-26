@@ -1,0 +1,46 @@
+---
+title: 開始使用 Zeabur Catalog
+description: 經過測試的 Kubernetes 元件與應用程式範本，附版本、設定與安裝方式。
+source: "db9fbcaf722c"
+---
+
+Zeabur Catalog 是一份在 CI 實際安裝並測試過的資料，分成元件和範本兩部分。每次發行都會發布一個簽章過的套件包，任何工具都能讀取它，產生 `helm install` 指令、Flux 或 Argo CD 清單、k3s 的 `HelmChart` 物件，或範本安裝。
+
+- **元件**由叢集管理員在每個叢集安裝一次，例如 Ingress、憑證、指標和資料庫 operator。每種用途都寫明採用哪個上游 chart、哪個版本、哪些設定，以及原因。
+- **範本**由專案成員安裝到單一 Namespace，例如 n8n、Dify、WordPress 和 PostgreSQL。範本固定映像檔，設定資源要求與上限，可行時以 Restricted Pod Security Standard 執行，並說明如何擴充、備份資料，以及升級前要檢查什麼。範本用 `requires` 指名需要的元件。
+
+## 我想部署一個範本
+
+驗證版本的簽章，渲染範本的物件，產生密碼並套用到叢集。
+
+[用 catalog 指令部署範本](get-started/deploy-a-template.mdx)
+
+## 我想知道有哪些內容
+
+[元件清單](reference/components.mdx)列出每個元件在單節點與多節點的預設狀態，[範本清單](reference/templates.mdx)列出所有應用程式範本。不同 Kubernetes 發行版的差異見[各發行版的差異](reference/distributions.mdx)。
+
+## 我想在自己的工具讀取 catalog
+
+固定一個版本，驗證簽章，再讀 `index.json`。見[版本與套件包](reference/releases.mdx)，檔案格式見[元件檔案格式](reference/component-format.mdx)與[範本檔案格式](reference/template-format.mdx)。
+
+## 我想新增元件或範本
+
+先看[新增元件](contribute/add-component.mdx)或[新增範本](contribute/add-template.mdx)，範本要符合[範本標準](reference/template-standards.mdx)。CI 的檢查內容見[測試與 CI](contribute/tests.mdx)。
+
+## 檔案怎麼放
+
+```text
+components/<capability>/<upstream>.yaml   一個用途搭配一個上游，一個檔案
+templates/<id>/template.yaml              一個應用程式：輸入、服務、安全性、擴充、煙霧測試
+templates/<id>/manifests.yaml             它的 Kubernetes 物件
+schema/v1/                                兩種檔案的 JSON Schema
+config/licenses.yaml                      OSI 核准的 SPDX 識別碼，以及只能選擇啟用的例外
+config/kubernetes.yaml                    Kubernetes 版本，以及 e2e 用的 kind 節點版本
+config/budget.yaml                        單節點的記憶體預算（MiB）
+config/e2e.yaml                           只給測試用的值
+measurements/                             閒置記憶體與 CPU，由 CI 寫入
+tools/                                    `catalog` 指令（Go）
+docs/                                     這份文件
+```
+
+路徑就是 ID：`components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`，`templates/n8n/` 的 ID 是 `n8n`。

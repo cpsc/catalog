@@ -1,0 +1,21 @@
+- group: get-started
+  label: 开始使用
+  pages:
+    deploy-a-template: 用 catalog 命令部署模板
+- group: reference
+  label: 参考
+  pages:
+    components: 组件列表
+    templates: 模板列表
+    distributions: 各 Kubernetes 发行版的差异
+    component-format: 组件文件格式
+    template-format: 模板文件格式
+    template-standards: 模板标准
+    releases: 版本与软件包
+    licenses: 许可证
+- group: contribute
+  label: 贡献
+  pages:
+    add-component: 添加组件
+    add-template: 添加模板
+    tests: 测试与 CI

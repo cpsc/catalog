@@ -1,0 +1,56 @@
+---
+title: 範本檔案格式
+description: 了解 template.yaml 的欄位與 manifests.yaml 的替換規則，編寫範本檔案。
+source: "a19f44fcb164"
+---
+
+範本由 `template.yaml` 與 `manifests.yaml` 組成。你在 `template.yaml` 定義範本資訊，並在 `manifests.yaml` 使用允許的欄位替換。
+
+## template.yaml
+
+以下是精簡範例。完整欄位請查閱 [範本 schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/template.schema.json)，範本要求請參考[範本標準](./template-standards.mdx)。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Template
+metadata:
+  name: PostgreSQL
+  description: PostgreSQL 18 managed by CloudNativePG, with Barman Cloud WAL archiving and scheduled base backups.
+  license: PostgreSQL AND Apache-2.0
+  homepage: https://www.postgresql.org/
+  icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+  categories: [databases]
+
+requires: [databases/cloudnative-pg]
+
+services:                         # the workloads in manifests.yaml
+  - name: postgresql
+    securityProfile: restricted   # or baseline, with baselineJustification
+    ports: [{name: postgresql, port: 5432}]
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
+
+inputs:
+  - name: backupDestination       # the person installing gives it
+    description: Dedicated S3 bucket and unique prefix for this cluster.
+    required: true
+    validation: {pattern: '^s3://[a-z0-9][a-z0-9.-]+/[A-Za-z0-9/_-]+$'}
+  # From n8n: the installer generates this value into a Secret.
+  # - name: encryptionKey
+  #   generate: random
+  #   secret: {name: n8n-secrets, key: encryption-key}
+
+security: {...}      # summary, risks with mitigations, unauthenticated services
+scalability: {...}   # replica range and what blocks more
+upgradeNotes: []     # what an upgrade needs
+smoke: []            # resource condition, then an HTTP or SQL check
+```
+
+## manifests.yaml
+
+`manifests.yaml` 只允許欄位替換，規則如下：
+
+- 可用的替換欄位只有 `{{ .Namespace }}`、`{{ .Domain }}`、`{{ .ClusterIssuer }}`，以及非自動產生輸入值的 `{{ .Inputs.<name> }}`。
+- 不允許條件、函式、管線或空白裁切標記。
+- 未提供的輸入值會使用 `default`；沒有 `default` 時，值為空。
+- 範本需要選項時，使用設有 `default` 的輸入欄位。
+- 渲染後的物件必須參照 Secret，不得包含自動產生的值。

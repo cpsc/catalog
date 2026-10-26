@@ -5,8 +5,8 @@ description: Development loop for the Zeabur Catalog repository — the checks C
 
 # Zeabur Catalog development loop
 
-Data format and how to add a component or template: `README.md`. Template rules:
-`docs/template-standards.md`. Pull request rules: `CONTRIBUTING.md`.
+Data format and how to add a component or template: `docs/contribute/add-component.mdx`, `docs/contribute/add-template.mdx`. Template rules:
+`docs/reference/template-standards.mdx`. Pull request rules: `CONTRIBUTING.md`.
 
 ## Checks (what CI runs)
 ```sh
@@ -16,7 +16,7 @@ nix develop -c go run ./tools/cmd/catalog index
 nix develop -c go run ./tools/cmd/catalog render     # helm template every profile, kubeconform
 nix develop -c go run ./tools/cmd/catalog template lint -values values.json <id>   # safety rules, kubeconform
 ```
-Cluster tests come in tiers (README, "CI"). L0 starts its own etcd and kube-apiserver and
+Cluster tests come in tiers (`docs/contribute/tests.mdx`). L0 starts its own etcd and kube-apiserver and
 needs no Docker. L1 and L2 create their own kind clusters: run them on a Linux machine with
 Docker, never on a kubeconfig context you did not create:
 ```sh

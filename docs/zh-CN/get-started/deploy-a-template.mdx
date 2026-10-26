@@ -1,0 +1,97 @@
+---
+title: 用 catalog 命令部署模板
+description: 验证版本签名、准备集群，渲染并应用模板，完成部署。
+source: "a5994d7d1629"
+---
+
+验证版本签名后，用 `catalog` 命令渲染并应用一个模板，再运行冒烟测试（smoke check）和你自己的测试，确认部署结果。
+
+## 开始前
+
+- 在你信任的源码 checkout 上，用你要部署的 tag 构建 `catalog` 命令。不要运行未经验证的下载文件。
+- 安装模板 `requires` 列出的每个组件，全部使用同一个版本。
+- 使用能落实 NetworkPolicy 的 CNI。安装程序会隔离各项目的 Namespace；模板本身不会添加默认拒绝所有流量的策略。只有代码沙箱这类没有自身登录机制的服务，才会附带入站流量策略。模板不限制出站流量。
+- 将一个 StorageClass 设为默认。模板不指定 StorageClass，卷会使用默认值。没有默认 StorageClass 时，PersistentVolumeClaim 会停留在 `Pending`。
+- 如果模板需要域名，先准备好 cert-manager ClusterIssuer。
+- 每个 Namespace 内，同一个模板只能安装一次。模板内的对象名称固定。
+
+<Steps>
+
+<Step>
+
+### 验证版本
+
+将同一个版本 tag 的 `bundle.tar.gz` 和 `bundle.tar.gz.sigstore.json` 下载到新建的私有目录，再用该 tag 的完整工作流身份验证签名：
+
+```sh
+tag=vX.Y.Z
+cosign verify-blob bundle.tar.gz --bundle bundle.tar.gz.sigstore.json \
+  --certificate-identity "https://github.com/zeabur-oss/catalog/.github/workflows/release.yml@refs/tags/$tag" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+只检查签发者，或使用宽松的正则表达式，都会接受其他工作流的签名。签名验证通过后才能解压包（bundle），并拒绝绝对路径、`..` 和链接。
+
+</Step>
+
+<Step>
+
+### 渲染并应用模板
+
+先阅读 `templates/<id>/template.yaml` 中的许可证、输入、`requires`、安全风险、扩展限制和升级注意事项，再渲染对象：
+
+```sh
+go run ./tools/cmd/catalog template render -namespace app \
+  -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
+```
+
+`inputs.json` 是一个 JSON 对象，以字符串值提供模板要求的输入。渲染时会检查每个必填输入。对象存储桶和凭证必须提前准备好。
+
+为模板生成包含密码和密钥的 Secret，再应用对象：
+
+```sh
+umask 077
+go run ./tools/cmd/catalog template inputs -namespace app <id> > secrets.json
+kubectl create namespace app
+kubectl -n app apply -f secrets.json
+kubectl -n app apply -f plan.yaml
+```
+
+不要将 `secrets.json` 加入版本控制。每次运行 `inputs` 都会生成新值；每次部署只运行一次，升级时沿用现有的 Secret。
+
+应用后，运行模板的冒烟测试和你自己的测试。
+
+</Step>
+
+<Step>
+
+### 升级与回滚
+
+记录每次部署的版本、Namespace、镜像引用、输入和 Secret 名称。升级前，比较渲染后的对象差异，阅读当前版本到目标版本之间的所有升级注意事项，完成备份，并在副本上演练升级。
+
+要将应用回滚到旧版，先确认数据库和存储的兼容性，再部署此前已验证版本的对象。数据库降级通常需要恢复。备份应存放在应用的 Namespace 之外。
+
+</Step>
+
+</Steps>
+
+## 自动生成的输入
+
+自动生成的输入包含 `secret`（`name` 和 `key`），以及必须匹配完整生成值的 `validation.pattern`。
+
+| 字段 | 说明 |
+| --- | --- |
+| `generate` | `random`。 |
+| `generateBytes` | 编码前的随机字节数，范围为 12 到 64，默认为 32。 |
+| `generateEncoding` | `base64url`（默认，不含填充字符）或小写 `hex`。 |
+
+用户提供的输入包含 `required`，不包含自动生成字段。12 个字节以 `base64url` 编码后会得到 16 个字符；16 或 32 个字节以 `hex` 编码后会分别得到 32 或 64 个字符。
+
+CloudNativePG 会自行创建应用凭证的 Secret，模板直接沿用。
+
+## 参考链接
+
+- [Cosign blob 验证](https://docs.sigstore.dev/cosign/verifying/verify/)
+- [GitHub OIDC](https://docs.github.com/en/actions/reference/security/oidc)
+- [Kubernetes Secret 最佳实践](https://kubernetes.io/docs/concepts/security/secrets-good-practices/)
+- [Pod 安全标准](https://kubernetes.io/docs/concepts/security/pod-security-standards/)

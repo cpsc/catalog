@@ -1,0 +1,28 @@
+---
+title: 许可证
+description: 确认 Zeabur Catalog 的工具、组件和模板使用的许可证，以及贡献时采用的声明。
+source: "f3a2998c62b8"
+---
+
+使用 Zeabur Catalog 的工具、组件或模板时，查看各自的许可证信息，确认适用的许可条款。工具和原创文件采用 `Apache-2.0`；上游项目、应用、镜像和 chart 各自保留原有许可证，并在 `metadata.license` 中标注。
+
+## 组件许可证
+
+组件的 `metadata.license` 必须使用 OSI 批准的 SPDX 许可证标识符。允许的标识符列在 [config/licenses.yaml](https://github.com/zeabur-oss/catalog/blob/main/config/licenses.yaml)，这份列表根据 SPDX 许可证列表 3.29.0 生成。
+
+`optInOnly` 列表允许以下源码可用许可证作为例外：
+
+| 组件 | 许可证 |
+| --- | --- |
+| Dragonfly | `BUSL-1.1` |
+| Percona Server for MongoDB | `SSPL-1.0` |
+
+这类组件只能标注为可选（`optional`）或 `unsupported`，不能默认启用。`index.json` 会将这些许可证列在 `nonOSILicenses` 中，供安装工具在安装前显示。
+
+## 模板许可证标注
+
+模板打包的软件采用源码可用许可证时，例如 `BUSL-1.1` 或 SSPL，要在模板描述中写出准确的许可证名称，并附上许可证链接。模板不能要求用户输入同意许可条款的字符串。
+
+## 贡献声明
+
+贡献采用[开发者来源证书](https://developercertificate.org/)。贡献方式请见 [CONTRIBUTING.md](https://github.com/zeabur-oss/catalog/blob/main/CONTRIBUTING.md)。

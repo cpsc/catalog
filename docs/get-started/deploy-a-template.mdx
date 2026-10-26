@@ -1,0 +1,96 @@
+---
+title: Deploy a template with the catalog command
+description: Verify the release signature, prepare the cluster, and render and apply a template to complete the deployment.
+---
+
+After you verify the release signature, use the `catalog` command to render and apply a template. Then run the smoke check and your own tests to verify the deployment.
+
+## Before you begin
+
+- Build the `catalog` command from a source checkout you trust, using the tag you plan to deploy. Don't run unverified downloads.
+- Install every component listed in the template's `requires`, all at the same version.
+- Use a CNI that enforces NetworkPolicy. The installer isolates each project's Namespace; templates don't add a default-deny policy for all traffic. Only services without their own login mechanism, such as code sandboxes, include an ingress policy. Templates don't restrict outbound traffic.
+- Set a StorageClass as the default. Templates don't specify a StorageClass, so volumes use the default. Without a default StorageClass, PersistentVolumeClaims remain `Pending`.
+- If the template requires a domain, prepare a cert-manager ClusterIssuer first.
+- Install each template only once per Namespace. Object names within a template are fixed.
+
+<Steps>
+
+<Step>
+
+### Verify the release
+
+Download `bundle.tar.gz` and `bundle.tar.gz.sigstore.json` from the same release tag into a new private directory. Then verify the signature against the full workflow identity for that tag:
+
+```sh
+tag=vX.Y.Z
+cosign verify-blob bundle.tar.gz --bundle bundle.tar.gz.sigstore.json \
+  --certificate-identity "https://github.com/zeabur-oss/catalog/.github/workflows/release.yml@refs/tags/$tag" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Checking only the issuer or using a loose regular expression accepts signatures from other workflows. Extract the bundle only after signature verification succeeds, and reject absolute paths, `..`, and links.
+
+</Step>
+
+<Step>
+
+### Render and apply the template
+
+Read the license, inputs, `requires`, security risks, scaling limits, and upgrade notes in `templates/<id>/template.yaml` before you render the objects:
+
+```sh
+go run ./tools/cmd/catalog template render -namespace app \
+  -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
+```
+
+`inputs.json` is a JSON object that provides the inputs the template requires as string values. Rendering checks every required input. Prepare object storage buckets and credentials beforehand.
+
+Generate the template's passwords and keys as Secrets, then apply the objects:
+
+```sh
+umask 077
+go run ./tools/cmd/catalog template inputs -namespace app <id> > secrets.json
+kubectl create namespace app
+kubectl -n app apply -f secrets.json
+kubectl -n app apply -f plan.yaml
+```
+
+Don't commit `secrets.json` to version control. Each run of `inputs` generates new values. Run it only once per deployment, and reuse the existing Secrets during upgrades.
+
+After you apply the objects, run the template's smoke check and your own tests.
+
+</Step>
+
+<Step>
+
+### Upgrade and roll back
+
+Record the version, Namespace, image references, inputs, and Secret names for each deployment. Before you upgrade, compare the rendered objects, read all upgrade notes between the current and target versions, complete a backup, and rehearse the upgrade on a copy.
+
+To roll back the application, check database and storage compatibility first, then deploy the objects from a previously verified release. Database downgrades usually require a restore. Store backups outside the application's Namespace.
+
+</Step>
+
+</Steps>
+
+## Generated inputs
+
+Generated inputs include `secret` (`name` and `key`) and a `validation.pattern` that must match the entire generated value.
+
+| Field | Description |
+| --- | --- |
+| `generate` | `random`. |
+| `generateBytes` | Number of random bytes before encoding, from 12 to 64. Defaults to 32. |
+| `generateEncoding` | `base64url` (the default, without padding) or lowercase `hex`. |
+
+User-provided inputs include `required` and don't include generation fields. Encoding 12 bytes as `base64url` produces 16 characters; encoding 16 or 32 bytes as `hex` produces 32 or 64 characters, respectively.
+
+CloudNativePG creates its own Secret for application credentials, and the template reuses it directly.
+
+## References
+
+- [Cosign blob verification](https://docs.sigstore.dev/cosign/verifying/verify/)
+- [GitHub OIDC](https://docs.github.com/en/actions/reference/security/oidc)
+- [Kubernetes Secret best practices](https://kubernetes.io/docs/concepts/security/secrets-good-practices/)
+- [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)

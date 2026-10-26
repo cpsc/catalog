@@ -1,0 +1,97 @@
+---
+title: 用 catalog 指令部署範本
+description: 驗證版本簽章、準備叢集，並渲染及套用範本，完成部署。
+source: "a5994d7d1629"
+---
+
+驗證版本簽章後，用 `catalog` 指令渲染並套用一個範本，再執行煙霧測試（smoke check）和你自己的測試，確認部署結果。
+
+## 開始前
+
+- 在你信任的原始碼 checkout 上，用你要部署的 tag 建置 `catalog` 指令。不要執行未驗證的下載檔。
+- 安裝範本 `requires` 列出的每個元件，全部使用同一個版本。
+- 使用會落實 NetworkPolicy 的 CNI。安裝程式會隔離各專案的 Namespace；範本本身不會加入預設拒絕所有流量的政策。只有程式碼沙盒這類沒有自身登入機制的服務，才會附上入站流量政策。範本不限制對外流量。
+- 將一個 StorageClass 設為預設。範本不指定 StorageClass，磁碟區會使用預設值。沒有預設 StorageClass 時，PersistentVolumeClaim會停在 `Pending`。
+- 如果範本需要網域，先準備好 cert-manager ClusterIssuer。
+- 每個 Namespace 內，同一個範本只能安裝一次。範本內的物件名稱固定。
+
+<Steps>
+
+<Step>
+
+### 驗證版本
+
+將同一個版本 tag 的 `bundle.tar.gz` 和 `bundle.tar.gz.sigstore.json` 下載到新建的私有目錄，再用該 tag 的完整工作流程身分驗證簽章：
+
+```sh
+tag=vX.Y.Z
+cosign verify-blob bundle.tar.gz --bundle bundle.tar.gz.sigstore.json \
+  --certificate-identity "https://github.com/zeabur-oss/catalog/.github/workflows/release.yml@refs/tags/$tag" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+只檢查簽發者，或使用寬鬆的正規表示式，都會接受其他工作流程的簽章。簽章驗證通過後才能解開套件包（bundle），並拒絕絕對路徑、`..` 和連結。
+
+</Step>
+
+<Step>
+
+### 渲染並套用範本
+
+先閱讀 `templates/<id>/template.yaml` 中的授權、輸入、`requires`、安全風險、擴充限制和升級注意事項，再渲染物件：
+
+```sh
+go run ./tools/cmd/catalog template render -namespace app \
+  -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
+```
+
+`inputs.json` 是一個 JSON 物件，以字串值提供範本要求的輸入。渲染時會檢查每個必填輸入。物件儲存貯體和憑證必須事先備妥。
+
+將範本的密碼和金鑰產生為 Secret，再套用物件：
+
+```sh
+umask 077
+go run ./tools/cmd/catalog template inputs -namespace app <id> > secrets.json
+kubectl create namespace app
+kubectl -n app apply -f secrets.json
+kubectl -n app apply -f plan.yaml
+```
+
+不要將 `secrets.json` 加入版本控制。每次執行 `inputs` 都會產生新值；每次部署只執行一次，升級時沿用既有的 Secret。
+
+套用後，執行範本的煙霧測試和你自己的測試。
+
+</Step>
+
+<Step>
+
+### 升級與回復到舊版
+
+記錄每次部署的版本、Namespace、映像檔參照、輸入和 Secret 名稱。升級前，比較渲染後的物件差異，閱讀目前版本到目標版本之間的所有升級注意事項，完成備份，並在副本上演練升級。
+
+要將應用程式回復到舊版，先確認資料庫和儲存空間的相容性，再部署先前已驗證版本的物件。資料庫降版通常需要還原。備份應存放在應用程式的 Namespace 之外。
+
+</Step>
+
+</Steps>
+
+## 自動產生的輸入
+
+自動產生的輸入包含 `secret`（`name` 和 `key`），以及必須符合完整產生值的 `validation.pattern`。
+
+| 欄位 | 說明 |
+| --- | --- |
+| `generate` | `random`。 |
+| `generateBytes` | 編碼前的隨機位元組數，範圍為 12 到 64，預設為 32。 |
+| `generateEncoding` | `base64url`（預設，不含填補字元）或小寫 `hex`。 |
+
+使用者提供的輸入包含 `required`，不包含自動產生欄位。12 個位元組以 `base64url` 編碼後會得到 16 個字元；16 或 32 個位元組以 `hex` 編碼後會分別得到 32 或 64 個字元。
+
+CloudNativePG 會自行建立應用程式憑證的 Secret，範本直接沿用。
+
+## 參考連結
+
+- [Cosign blob 驗證](https://docs.sigstore.dev/cosign/verifying/verify/)
+- [GitHub OIDC](https://docs.github.com/en/actions/reference/security/oidc)
+- [Kubernetes Secret 最佳實務](https://kubernetes.io/docs/concepts/security/secrets-good-practices/)
+- [Pod 安全標準](https://kubernetes.io/docs/concepts/security/pod-security-standards/)

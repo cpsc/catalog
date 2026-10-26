@@ -1,0 +1,45 @@
+---
+title: Get started with Zeabur Catalog
+description: Tested Kubernetes components and application templates, with versions, configuration, and installation instructions.
+---
+
+Zeabur Catalog contains data that CI has installed and tested. It has two parts: components and templates. Each release publishes a signed bundle that any tool can read to generate `helm install` commands, Flux or Argo CD manifests, k3s `HelmChart` objects, or template installations.
+
+- **Components** are installed once per cluster by cluster administrators. Examples include Ingress, certificates, metrics, and database operators. Each capability specifies the upstream chart, version, configuration, and reasons for those choices.
+- **Templates** are installed into a single Namespace by project members. Examples include n8n, Dify, WordPress, and PostgreSQL. Templates pin images, set resource requests and limits, run under the Restricted Pod Security Standard where possible, and explain how to scale, back up data, and check prerequisites before upgrading. Templates name their required components in `requires`.
+
+## I want to deploy a template
+
+Verify the release signature, render the template's objects, generate passwords, and apply the objects to the cluster.
+
+[Deploy a template with the catalog command](get-started/deploy-a-template.mdx)
+
+## I want to see what's available
+
+The [component list](reference/components.mdx) shows each component's default state for single-node and multi-node clusters. The [template list](reference/templates.mdx) lists all application templates. See [distribution differences](reference/distributions.mdx) for differences across Kubernetes distributions.
+
+## I want to read the catalog from my own tools
+
+Pin a version, verify its signature, and read `index.json`. See [releases and bundles](reference/releases.mdx) for details, and [component file format](reference/component-format.mdx) and [template file format](reference/template-format.mdx) for the file formats.
+
+## I want to add a component or template
+
+Start with [adding a component](contribute/add-component.mdx) or [adding a template](contribute/add-template.mdx). Templates must meet the [template standards](reference/template-standards.mdx). See [tests and CI](contribute/tests.mdx) for the checks CI runs.
+
+## File layout
+
+```text
+components/<capability>/<upstream>.yaml   One file per capability and upstream pair
+templates/<id>/template.yaml              One application: inputs, services, security, scaling, smoke tests
+templates/<id>/manifests.yaml             Its Kubernetes objects
+schema/v1/                                JSON Schema for both file types
+config/licenses.yaml                      OSI-approved SPDX identifiers and opt-in exceptions
+config/kubernetes.yaml                    Kubernetes versions and kind node versions for e2e
+config/budget.yaml                        Single-node memory budget (MiB)
+config/e2e.yaml                           Test-only values
+measurements/                             Idle memory and CPU, written by CI
+tools/                                    The `catalog` command (Go)
+docs/                                     This documentation
+```
+
+The path is the ID: `components/ingress/traefik.yaml` has the ID `ingress/traefik`, and `templates/n8n/` has the ID `n8n`.

@@ -1,0 +1,87 @@
+---
+title: 组件文件格式
+description: 按照通用结构和组件字段编写 YAML，并用 digest 固定安装内容。
+source: "0f94d58c7b90"
+---
+
+把组件文件放在 `components/<capability>/<upstream>.yaml`，每个 capability（用途类别）与上游的组合各用一个文件。文件使用 YAML，包含通用结构、安装内容和配置。路径就是 ID，例如 `components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`。
+
+## 通用结构
+
+组件与模板共用 `apiVersion`、`kind`、`metadata` 和 `requires` 这组结构。`kind` 用来区分组件与模板，`requires` 可以填写 capability 或 `<capability>/<upstream>`。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Component                   # or Template
+metadata:
+  name: Traefik Proxy
+  description: Why it is recommended, or what the template runs, in one or two sentences.
+  license: MIT                    # SPDX
+  homepage: https://traefik.io/traefik/
+requires: [certificates]          # <capability> or <capability>/<upstream>
+```
+
+## 组件字段
+
+下面是一个精简示例。`defaults` 指定各 profile（`single-node` 或 `multi-node` 的配置组合）的启用配置，`recommended` 表示默认启用（recommended）。`releases` 列出按顺序安装的内容，`profiles` 的配置会合并到共用的 `values`。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Component
+metadata:
+  name: Traefik Proxy
+  description: Why it is recommended, in one or two sentences.
+  license: MIT                    # SPDX; OSI-approved, or opt-in only (see below)
+  homepage: https://traefik.io/traefik/
+maturity: independent             # cncf-graduated | cncf-incubating | cncf-sandbox | kubernetes-sig | independent
+defaults: {single-node: recommended, multi-node: recommended}
+requires: [certificates]          # installed first
+distributions: [k3s]              # optional; omitted means any cluster
+
+releases:                         # installed in order
+  - name: traefik
+    namespace: traefik
+    chart: oci://ghcr.io/traefik/helm/traefik   # or repo: https://… plus chart: <name>
+    version: 41.7.1                             # exact; Renovate bumps it
+    chartDigest: sha256:…                       # required with chart; see Digests
+    values: |                                   # shared by every profile
+      gatewayClass:
+        # Every value has a comment saying why; `catalog validate` enforces it.
+        enabled: true
+      image:
+        # Every image is <tag>@sha256:<digest>; `catalog render` enforces it.
+        tag: v3.7.16@sha256:…
+    profiles:                                   # merged over values like helm -f
+      single-node: |
+        deployment:
+          # One node: a second replica gains nothing.
+          replicas: 1
+  - name: crds
+    namespace: kube-system
+    urls: [https://github.com/…/releases/download/{version}/standard-install.yaml]
+    version: v1.6.2
+    urlDigests: [sha256:…]                      # one per URL, in order
+  # or: manifests: |  objects applied as written
+
+inputs: []        # values to ask for or generate; Secrets are created from them
+contributes: []   # values added to another component's release (CrowdSec -> Traefik)
+detection: {...}  # CRDs, API services, Helm charts, workloads
+security: {...}   # RBAC summary, cluster-wide, privileged, podSecurity, egress, credentials, tenant risks
+smoke: []         # extra e2e checks
+leftovers: []     # what the upstream keeps on uninstall (e.g. CRDs)
+```
+
+## 用 digest 固定内容
+
+每个 `releases` 条目都要用 digest 固定内容。chart 或 URL 的内容与 digest 不符时，Zeabur Installer 与 `catalog render` 会停止。
+
+- HTTP chart 的 `chartDigest` 使用仓库 `index.yaml` 中对应条目的 `digest`，也就是 `.tgz` 的 sha256。
+- OCI chart 的 `chartDigest` 使用 manifest digest，也就是 `helm push` 输出的值。`helm pull <chart>:<version>@sha256:…` 会检查这个值。
+- `urlDigests` 使用每个下载文件的 sha256，顺序必须与 URL 一致。
+- 镜像在 `values` 中使用 `<tag>@sha256:<digest>`，也包括 chart 通过参数传给 operator 的镜像。chart 无法接受 digest 时，要在 `unpinnedImages` 中列出镜像，并用注释说明原因。URL 安装条目不受这项要求限制，因为 `urlDigests` 已固定上游提供的内容。
+
+Renovate 会更新镜像与 OCI chart 的标签和 digest。它无法读取 HTTP chart 或 URL 的 digest。Renovate 更新 `version` 后，`catalog render` 会失败，并输出新的 digest，供你复制填入。
+
+安装结果必须一致：chart 不得生成密钥或证书。需要生成的值放在 `inputs` 中，并存储在 Secret 中；证书由 cert-manager 提供。如果两次渲染的结果不同，`catalog render` 会失败。
+
+完整字段定义见[组件 JSON Schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/component.schema.json)。

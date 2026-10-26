@@ -1,0 +1,28 @@
+---
+title: 授權
+description: 確認 Zeabur Catalog 的工具、元件與範本授權，以及貢獻時使用的授權聲明。
+source: "f3a2998c62b8"
+---
+
+使用 Zeabur Catalog 的工具、元件或範本時，查看各自的授權資訊，確認適用的授權條款。工具與原創檔案採用 `Apache-2.0`；上游專案、應用程式、映像檔與 chart 各自保留原有授權，並在 `metadata.license` 標示。
+
+## 元件授權
+
+元件的 `metadata.license` 必須使用 OSI 核准的 SPDX 授權識別碼。允許的識別碼列在 [config/licenses.yaml](https://github.com/zeabur-oss/catalog/blob/main/config/licenses.yaml)，這份清單由 SPDX 授權清單 3.29.0 產生。
+
+`optInOnly` 清單允許以下來源可用授權作為例外：
+
+| 元件 | 授權 |
+| --- | --- |
+| Dragonfly | `BUSL-1.1` |
+| Percona Server for MongoDB | `SSPL-1.0` |
+
+這類元件只能標示為選用（`optional`）或 `unsupported`，不可預設啟用。`index.json` 會將這些授權列在 `nonOSILicenses`，供安裝工具在安裝前顯示。
+
+## 範本授權標示
+
+範本打包的軟體採用來源可用授權時，例如 `BUSL-1.1` 或 SSPL，要在範本描述中寫出準確的授權名稱，並附上授權連結。範本不能要求使用者輸入同意授權的字串。
+
+## 貢獻聲明
+
+貢獻採用 [Developer Certificate of Origin](https://developercertificate.org/)。貢獻方式請見 [CONTRIBUTING.md](https://github.com/zeabur-oss/catalog/blob/main/CONTRIBUTING.md)。

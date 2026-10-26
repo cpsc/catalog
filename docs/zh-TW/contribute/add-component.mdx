@@ -1,0 +1,61 @@
+---
+title: 新增元件
+description: 建立元件檔案、通過本機檢查，並提交含有 signed-off commits 的 pull request。
+source: "f9ac25395134"
+---
+
+選擇 capability 和上游專案，建立元件檔案並完成本機檢查，再提交 pull request。完成後，你會有一個通過檢查的元件檔案和一個 pull request。
+
+## 開始前
+
+- 使用 `nix develop` 取得 Go、Helm、kubectl、kubeconform、etcd、kube-apiserver 和 kind。
+- 執行 L1 和 L2 檢查時，還需要 Linux 上的 Docker。
+
+<Steps>
+
+<Step>
+
+### 選擇 capability 和上游專案
+
+選擇 capability（用途類別），並挑選採用 OSI 核准授權的上游專案。優先選擇 CNCF 或 Kubernetes SIG 專案。
+
+如果授權屬於 `optInOnly`（`SSPL-1.0`），每個 profile 都只能設為選用（`optional`）或 `unsupported`。
+
+</Step>
+
+<Step>
+
+### 建立元件檔案
+
+參考相似的元件檔案，建立 `components/<capability>/<upstream>.yaml`。
+
+為 `single-node` 和 `multi-node` 這兩個 profile（設定組合）各自指定設定值，並各加一則註解說明原因。
+
+</Step>
+
+<Step>
+
+### 執行本機檢查
+
+執行以下指令：
+
+```sh
+go run ./tools/cmd/catalog validate          # schema, license, references, comments
+go run ./tools/cmd/catalog render            # helm template + kubeconform
+go run ./tools/cmd/catalog e2e -tier l0      # what every pull request runs
+go run ./tools/cmd/catalog e2e -tier l2 <id>
+```
+
+`validate` 檢查 schema、授權、參照和註解。`render` 執行 `helm template` 和 kubeconform。每個 pull request 都會執行 L0 檢查。
+
+</Step>
+
+<Step>
+
+### 提交 pull request
+
+使用 `git commit -s` 建立含有 sign-off 的 commit，再開啟 pull request。
+
+</Step>
+
+</Steps>

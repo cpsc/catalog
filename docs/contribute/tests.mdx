@@ -1,0 +1,202 @@
+---
+title: Tests and CI
+description: Learn when each CI tier runs, what it checks, and how to configure template test inputs.
+---
+
+L0 runs on every pull request. L1 runs in the merge queue and after merges to `main`. L2 runs nightly and before releases in the release workflow. Each tier covers different checks, and later tiers run checks that earlier tiers don't cover. You can also run the same tests as CI with `catalog e2e -tier l0|l1|l2`.
+
+## Before you start
+
+- L0 doesn't require Docker.
+- L1 and L2 create kind clusters and require Linux and Docker. Add `-cluster current` to use the cluster specified by `KUBECONFIG` instead.
+- KubeSolo tests require a Linux host and root privileges.
+
+Standard tests use the `single-node` or `multi-node` profile, each with its own set of settings.
+
+## L0: Check every pull request
+
+`ci.yml` runs the following checks sequentially in a single job.
+
+<Steps>
+
+<Step>
+
+### Run Go tests
+
+Run the Go tests.
+
+</Step>
+
+<Step>
+
+### Validate files and template requirements
+
+Validate all files against their schemas, and confirm that each template's `requires` resolves in both profiles.
+
+</Step>
+
+<Step>
+
+### Check component licenses
+
+Reject component licenses that aren't OSI-approved. Exceptions must meet both conditions:
+
+- The license appears in `optInOnly` in [`config/licenses.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/licenses.yaml).
+- No profile enables the component by default (recommended).
+
+</Step>
+
+<Step>
+
+### Check profile rendering
+
+Render each profile twice. Both outputs must match exactly.
+
+Then validate the output with kubeconform for every Kubernetes version listed in [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml). Validate custom resources against the CRDs from the same rendering.
+
+</Step>
+
+<Step>
+
+### Check template rendering
+
+Render each template with test inputs, then check security rules, upstream Pod Security rules, and kubeconform validation results.
+
+</Step>
+
+<Step>
+
+### Validate with the API server
+
+Start etcd and kube-apiserver from [`flake.nix`](https://github.com/zeabur-oss/catalog/blob/main/flake.nix), use the Kubernetes version pinned by Zeabur Installer, and load only the rendered CRDs.
+
+Then use `kubectl apply --dry-run=server` to send the rendered output for all components in both profiles and all templates to the API server. The API server checks fields, defaults, CEL rules, and Pod Security without running workloads.
+
+Each template's Namespace generates warnings at its own enforce level. Any warning fails that template's test.
+
+</Step>
+
+</Steps>
+
+## L1: Test components and templates affected by changes
+
+In the merge queue and after merges to `main`, `ci.yml` installs the following items in a single-node amd64 kind cluster, then runs smoke checks:
+
+- Changed components and templates.
+- Components and templates that install a changed component.
+
+Tests that share dependencies share a cluster. Each dependency is installed only once per cluster. After a component passes its smoke check, the test uninstalls it unless a later test in the same cluster still needs it.
+
+If a change affects `config/`, `tools/`, the flake, or workflows, L1 tests everything.
+
+## L2: Test upgrades, resource usage, and cleanup
+
+`nightly.yml` and `release.yml` call `e2e.yml` to run L2 nightly and before each release.
+
+L2 creates a fresh kind cluster for each component and profile on amd64 and arm64. `single-node` uses one node, and `multi-node` uses three nodes.
+
+<Steps>
+
+<Step>
+
+### Install dependencies and test upgrades
+
+Install dependencies first.
+
+If the component version in the latest release differs from the version under test, install the version from the latest release first, then upgrade to the version under test.
+
+</Step>
+
+<Step>
+
+### Measure idle resource usage
+
+Sample idle memory and CPU usage every 10 seconds until five consecutive samples match, for up to 3 minutes.
+
+</Step>
+
+<Step>
+
+### Run smoke checks and uninstall
+
+Run smoke checks, then uninstall the component. Any leftover resources fail the test.
+
+</Step>
+
+</Steps>
+
+### Components that require additional credentials
+
+The `unready` list in [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) identifies components that require credentials CI doesn't have.
+
+L2 installs these components without waiting for readiness, then runs smoke checks and uninstalls them. It doesn't measure their resource usage.
+
+### Templates and resource budgets
+
+L2 installs each template and its required components in a single-node amd64 cluster, runs smoke checks, then uses the same sampling method to measure idle memory and CPU usage for Pods in the template's Namespace.
+
+Template measurements are stored in `measurements/templates/<id>.json`.
+
+L2 also checks the total usage of components enabled by default in the `single-node` profile on amd64 against the budget in [`config/budget.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/budget.yaml).
+
+`nightly.yml` opens a pull request to update `measurements/`. You can also run this workflow manually to get measurements immediately. Renovate opens a pull request for each new upstream version and image digest.
+
+### KubeSolo tests
+
+With `-profile kubesolo`, the tests install the KubeSolo and helm-controller versions pinned in [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) on a Linux host and verify their checksums.
+
+The tests then use the `single-node` settings to run L2 for the capabilities (usage categories) listed in that file: `ingress`, `certificates`, and `container-registry`.
+
+KubeSolo tests don't run templates because templates require NetworkPolicy. They also skip components whose `distributions` don't include `kubesolo`.
+
+Measurements are stored alongside the kind results, keyed by `kubesolo-<architecture>-<version>`.
+
+## Configure template test inputs
+
+Template tests get their input values from [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) and don't require repository secrets, so pull requests also run the full template tests.
+
+<Steps>
+
+<Step>
+
+### Configure shared and per-template inputs
+
+Configure the following in `config/e2e.yaml`:
+
+- `templateInputs`: Values for all templates that declare the input.
+- `templates.<id>`: Input values for a single template, objects to apply to `templates-e2e-<id>` before testing, and smoke checks to skip with reasons. The objects applied before testing can include Secrets specified by the input values.
+
+All values are disposable test data.
+
+</Step>
+
+<Step>
+
+### Configure object storage test data
+
+Whenever an input value uses `.S3`, the tests start SeaweedFS (`object-storage/seaweedfs-operator`) in `templates-e2e-s3` with a test CA and HTTPS on TCP 443. Backups and object storage data go to this service.
+
+The `e2e-s3` Secret in the template's Namespace stores access credentials and a CA certificate named `ca.crt`.
+
+Templates receive the CA through optional inputs such as `backupCASecret`. For templates that can't use a custom CA, the tests skip only the corresponding smoke checks.
+
+To use a different storage service, change the template's input values in `config/e2e.yaml`.
+
+</Step>
+
+</Steps>
+
+## Check results
+
+Each tier reports the time spent in each stage. L0 starts its own API server. L1 and L2 create their own kind clusters, each with a separate kubeconfig.
+
+After testing, each tier deletes the test environment it created. Add `-keep` to retain the environment.
+
+## Troubleshooting
+
+| Symptom or result | Next step |
+| --- | --- |
+| L0 fails because of Pod Security warnings for a template's Namespace | Fix the template according to the warnings. Warnings fail the template test. |
+| A component appears in `unready` and has no resource measurements | Check `config/e2e.yaml`. These components require credentials CI doesn't have, so the tests don't measure their resource usage. |
+| KubeSolo doesn't test a component | Check whether the component's `distributions` includes `kubesolo`. |
+| Nodes need to pull images from registry mirrors | Set `ZEABUR_REGISTRY_MIRRORS` with a value in the format `docker.io=http://mirror:5001,ghcr.io=...`. |

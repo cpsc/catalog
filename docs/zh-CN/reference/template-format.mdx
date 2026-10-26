@@ -1,0 +1,56 @@
+---
+title: 模板文件格式
+description: 了解 template.yaml 的字段和 manifests.yaml 的替换规则，编写模板文件。
+source: "a19f44fcb164"
+---
+
+模板由 `template.yaml` 和 `manifests.yaml` 组成。你在 `template.yaml` 中定义模板信息，并在 `manifests.yaml` 中使用允许的字段替换。
+
+## template.yaml
+
+以下是精简示例。完整字段请查阅[模板 schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/template.schema.json)，模板要求请参考[模板标准](./template-standards.mdx)。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Template
+metadata:
+  name: PostgreSQL
+  description: PostgreSQL 18 managed by CloudNativePG, with Barman Cloud WAL archiving and scheduled base backups.
+  license: PostgreSQL AND Apache-2.0
+  homepage: https://www.postgresql.org/
+  icon: https://cdn.zeabur.com/marketplace/postgresql.svg
+  categories: [databases]
+
+requires: [databases/cloudnative-pg]
+
+services:                         # the workloads in manifests.yaml
+  - name: postgresql
+    securityProfile: restricted   # or baseline, with baselineJustification
+    ports: [{name: postgresql, port: 5432}]
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: "1", memory: 1Gi}}
+
+inputs:
+  - name: backupDestination       # the person installing gives it
+    description: Dedicated S3 bucket and unique prefix for this cluster.
+    required: true
+    validation: {pattern: '^s3://[a-z0-9][a-z0-9.-]+/[A-Za-z0-9/_-]+$'}
+  # From n8n: the installer generates this value into a Secret.
+  # - name: encryptionKey
+  #   generate: random
+  #   secret: {name: n8n-secrets, key: encryption-key}
+
+security: {...}      # summary, risks with mitigations, unauthenticated services
+scalability: {...}   # replica range and what blocks more
+upgradeNotes: []     # what an upgrade needs
+smoke: []            # resource condition, then an HTTP or SQL check
+```
+
+## manifests.yaml
+
+`manifests.yaml` 只允许字段替换，规则如下：
+
+- 可用的替换字段只有 `{{ .Namespace }}`、`{{ .Domain }}`、`{{ .ClusterIssuer }}`，以及非自动生成输入值的 `{{ .Inputs.<name> }}`。
+- 不允许条件、函数、管道或空白裁剪标记。
+- 未提供的输入值使用 `default`；没有 `default` 时，值为空。
+- 模板需要选项时，使用设有 `default` 的输入字段。
+- 渲染后的对象必须引用 Secret，不得包含自动生成的值。

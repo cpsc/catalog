@@ -1,0 +1,46 @@
+---
+title: 元件清單
+description: 查看各元件的上游、單節點與多節點預設狀態，以及使用限制。
+source: "e09fc4f50cf0"
+---
+
+元件是叢集管理員在每個叢集安裝一次的軟體。Zeabur Catalog 依 capability（用途類別）寫明採用哪個上游 chart、哪個版本、哪些設定，以及選擇原因。你可以依下表查看各元件在單節點與多節點的預設狀態。
+
+各 profile（`single-node` 或 `multi-node` 的設定組合）使用以下狀態：
+
+- 預設啟用（`recommended`）：預設開啟。
+- 選用（`optional`）：提供選項，但預設關閉。
+- 不支援（`unsupported`）：不提供選項。
+
+各元件檔案的 `detection` 規則會找出既有安裝，供系統重複使用。
+
+| Capability | 上游 | 單節點 | 多節點 | 備註 |
+| --- | --- | --- | --- | --- |
+| certificates | cert-manager | 預設啟用 | 預設啟用 | |
+| config-reload | Stakater Reloader | 選用 | 選用 | |
+| container-registry | zot | 選用 | 選用 | |
+| databases | CloudNativePG | 選用 | 選用 | |
+| databases | Dragonfly Operator | 選用 | 選用 | 伺服器授權為 `BUSL-1.1`，需自行選擇啟用 |
+| databases | MariaDB Operator | 選用 | 選用 | |
+| databases | MOCO | 選用 | 選用 | |
+| databases | Percona Operator for MongoDB | 選用 | 選用 | 伺服器授權為 `SSPL-1.0`，需自行選擇啟用 |
+| event-autoscaling | KEDA HTTP Add-on | 選用 | 選用 | `beta` |
+| event-autoscaling | KEDA | 選用 | 預設啟用 | |
+| external-secrets | External Secrets Operator | 選用 | 選用 | |
+| image-updates | Keel | 選用 | 選用 | |
+| ingress | Traefik Proxy | 預設啟用 | 預設啟用 | |
+| intrusion-prevention | CrowdSec | 選用 | 選用 | |
+| logs | VictoriaLogs | 預設啟用 | 預設啟用 | |
+| metrics | Kubernetes Metrics Server | 預設啟用 | 預設啟用 | |
+| metrics | VictoriaMetrics (k8s stack) | 預設啟用 | 預設啟用 | |
+| node-updates | System Upgrade Controller | 預設啟用 | 預設啟用 | 僅限 `k3s`、`rke2` |
+| object-storage | SeaweedFS Operator | 選用 | 選用 | `beta` |
+| observability-operator | VictoriaMetrics operator | 預設啟用 | 預設啟用 | |
+| remote-access | Tailscale Kubernetes operator | 選用 | 選用 | |
+| replicated-storage | Longhorn | 選用 | 預設啟用 | |
+| resource-recommendations | Vertical Pod Autoscaler (recommender only) | 選用 | 選用 | |
+| runtime-security | Falco | 選用 | 選用 | |
+| uptime-probes | Prometheus Blackbox Exporter | 選用 | 預設啟用 | |
+| volume-backup | K8up | 選用 | 選用 | |
+| volume-backup | Velero | 選用 | 選用 | 僅限管理員 |
+| vulnerability-scanning | Trivy Operator | 選用 | 選用 | |

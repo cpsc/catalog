@@ -1,0 +1,87 @@
+---
+title: 元件檔案格式
+description: 按照共用外框與元件欄位撰寫 YAML，並用 digest 固定安裝內容。
+source: "0f94d58c7b90"
+---
+
+把元件檔案放在 `components/<capability>/<upstream>.yaml`，每個 capability（用途類別）與上游的組合各用一個檔案。檔案使用 YAML，包含共用外框、安裝內容與設定。路徑就是 ID，例如 `components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`。
+
+## 共用外框
+
+元件與範本共用 `apiVersion`、`kind`、`metadata` 與 `requires` 這組外框。`kind` 用來區分元件與範本，`requires` 可填 capability 或 `<capability>/<upstream>`。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Component                   # or Template
+metadata:
+  name: Traefik Proxy
+  description: Why it is recommended, or what the template runs, in one or two sentences.
+  license: MIT                    # SPDX
+  homepage: https://traefik.io/traefik/
+requires: [certificates]          # <capability> or <capability>/<upstream>
+```
+
+## 元件欄位
+
+以下是精簡範例。`defaults` 指定各 profile（`single-node` 或 `multi-node` 的設定組合）的啟用設定，`recommended` 代表預設啟用（recommended）。`releases` 列出依序安裝的內容，`profiles` 的設定會合併到共用的 `values`。
+
+```yaml
+apiVersion: catalog.zeabur.com/v1
+kind: Component
+metadata:
+  name: Traefik Proxy
+  description: Why it is recommended, in one or two sentences.
+  license: MIT                    # SPDX; OSI-approved, or opt-in only (see below)
+  homepage: https://traefik.io/traefik/
+maturity: independent             # cncf-graduated | cncf-incubating | cncf-sandbox | kubernetes-sig | independent
+defaults: {single-node: recommended, multi-node: recommended}
+requires: [certificates]          # installed first
+distributions: [k3s]              # optional; omitted means any cluster
+
+releases:                         # installed in order
+  - name: traefik
+    namespace: traefik
+    chart: oci://ghcr.io/traefik/helm/traefik   # or repo: https://… plus chart: <name>
+    version: 41.7.1                             # exact; Renovate bumps it
+    chartDigest: sha256:…                       # required with chart; see Digests
+    values: |                                   # shared by every profile
+      gatewayClass:
+        # Every value has a comment saying why; `catalog validate` enforces it.
+        enabled: true
+      image:
+        # Every image is <tag>@sha256:<digest>; `catalog render` enforces it.
+        tag: v3.7.16@sha256:…
+    profiles:                                   # merged over values like helm -f
+      single-node: |
+        deployment:
+          # One node: a second replica gains nothing.
+          replicas: 1
+  - name: crds
+    namespace: kube-system
+    urls: [https://github.com/…/releases/download/{version}/standard-install.yaml]
+    version: v1.6.2
+    urlDigests: [sha256:…]                      # one per URL, in order
+  # or: manifests: |  objects applied as written
+
+inputs: []        # values to ask for or generate; Secrets are created from them
+contributes: []   # values added to another component's release (CrowdSec -> Traefik)
+detection: {...}  # CRDs, API services, Helm charts, workloads
+security: {...}   # RBAC summary, cluster-wide, privileged, podSecurity, egress, credentials, tenant risks
+smoke: []         # extra e2e checks
+leftovers: []     # what the upstream keeps on uninstall (e.g. CRDs)
+```
+
+## 用 digest 固定內容
+
+每個 `releases` 項目都要用 digest 固定內容。chart 或 URL 的內容與 digest 不符時，Zeabur Installer 與 `catalog render` 會停止。
+
+- HTTP chart 的 `chartDigest` 使用儲存庫 `index.yaml` 中對應項目的 `digest`，也就是 `.tgz` 的 sha256。
+- OCI chart 的 `chartDigest` 使用 manifest digest，也就是 `helm push` 輸出的值。`helm pull <chart>:<version>@sha256:…` 會檢查這個值。
+- `urlDigests` 使用每個下載檔案的 sha256，順序必須與 URL 一致。
+- 映像檔在 `values` 中使用 `<tag>@sha256:<digest>`，也包含 chart 以引數傳給 operator 的映像檔。chart 無法接受 digest 時，要在 `unpinnedImages` 列出映像檔，並用註解說明原因。URL 安裝項目不受這項要求限制，因為 `urlDigests` 已固定上游提供的內容。
+
+Renovate 會更新映像檔與 OCI chart 的標籤及 digest。它無法讀取 HTTP chart 或 URL 的 digest。Renovate 更新 `version` 後，`catalog render` 會失敗，並輸出新的 digest，供你複製填入。
+
+安裝結果必須一致：chart 不得產生密鑰或憑證。需要產生的值放在 `inputs`，並儲存在 Secret 中；憑證由 cert-manager 提供。如果兩次渲染的結果不同，`catalog render` 會失敗。
+
+完整欄位定義見 [元件 JSON Schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/component.schema.json)。
