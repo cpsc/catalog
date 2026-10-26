@@ -51,4 +51,5 @@ security:
     - risk: A VPA's targetRef could name a workload in another namespace.
       mitigation: targetRef has no namespace field, so a VPA only targets its own namespace.
 
+# The chart annotates its CRDs helm.sh/resource-policy: keep.
 leftovers: [customresourcedefinitions]

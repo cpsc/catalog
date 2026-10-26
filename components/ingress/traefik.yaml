@@ -146,6 +146,7 @@ security:
     - risk: Traefik CRDs can reference other namespaces.
       mitigation: allowCrossNamespace is false, so a Middleware works only in its own namespace.
 
+# The chart's crds/ directory: Helm never deletes it.
 leftovers: [customresourcedefinitions]
 
 smoke:

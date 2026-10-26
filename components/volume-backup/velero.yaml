@@ -145,6 +145,7 @@ security:
         they encrypt.
       mitigation: Keep a copy of both Secrets outside the cluster. Before a restore into a new cluster, create them first.
 
+# The chart's crds/ directory: Helm never deletes it.
 leftovers: [customresourcedefinitions]
 
 upgradeNotes:

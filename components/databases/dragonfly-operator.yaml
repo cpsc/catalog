@@ -104,6 +104,7 @@ security:
     - risk: The admin port 9999 has no TLS and no authentication.
       mitigation: It is not on the Service; a NetworkPolicy can close it to other pods.
 
+# crds.keep annotates the CRDs helm.sh/resource-policy: keep.
 leftovers: [customresourcedefinitions]
 
 smoke:

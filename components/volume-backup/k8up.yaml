@@ -75,4 +75,5 @@ security:
     - risk: PreBackupPod runs an arbitrary pod spec before each backup.
       mitigation: It is subject to the namespace's Pod Security level.
 
+# The chart's crds/ directory: Helm never deletes it.
 leftovers: [customresourcedefinitions]

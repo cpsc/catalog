@@ -126,5 +126,3 @@ security:
         Each namespace's report is readable by its admins only (falco-alert-reader,
         aggregated to admin); alerts without a namespace go to a
         ClusterPolicyReport for cluster administrators.
-
-leftovers: [customresourcedefinitions]

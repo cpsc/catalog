@@ -85,5 +85,3 @@ security:
       mitigation: Reject tenant references to ClusterTriggerAuthentication with an admission policy.
     - risk: URL-based triggers make the operator call any address (SSRF).
       mitigation: Reject private and link-local trigger addresses with the same policy.
-
-leftovers: [customresourcedefinitions]

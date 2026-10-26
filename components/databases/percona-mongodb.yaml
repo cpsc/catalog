@@ -72,6 +72,7 @@ security:
     - risk: Percona Server for MongoDB is SSPL-1.0; offering it as a service to third parties has licence obligations.
       mitigation: Show the licence before install; it is opt-in only.
 
+# The chart's crds/ directory: Helm never deletes it.
 leftovers: [customresourcedefinitions]
 
 smoke:

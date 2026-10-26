@@ -49,5 +49,3 @@ security:
   risks:
     - risk: A Plan runs any image as root on the host, so whoever writes Plans owns every node.
       mitigation: Restrict Plan writes to administrators and use only signed, digest-pinned images.
-
-leftovers: [customresourcedefinitions]

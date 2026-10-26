@@ -158,7 +158,7 @@ security:
 
 # The manager creates the storage class longhorn-static itself, without an
 # owner, and Longhorn's uninstall deletes only the class longhorn.
-leftovers: [customresourcedefinitions, storageclasses/longhorn-static]
+leftovers: [storageclasses/longhorn-static]
 
 smoke:
   - name: driver

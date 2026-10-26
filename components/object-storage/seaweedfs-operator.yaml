@@ -102,6 +102,7 @@ security:
       mitigation: It reaches only Seaweed objects in its namespace unless a ResourceReferenceGrant allows more.
 
 # The CRDs carry helm.sh/resource-policy: keep.
+# The chart annotates its CRDs helm.sh/resource-policy: keep.
 leftovers: [customresourcedefinitions]
 
 smoke:

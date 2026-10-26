@@ -109,6 +109,7 @@ security:
     - risk: managed.services can add LoadBalancer Services that expose the database.
       mitigation: Restrict LoadBalancer Services with the same policy used for other workloads.
 
+# The chart annotates its CRDs helm.sh/resource-policy: keep.
 leftovers: [customresourcedefinitions]
 
 smoke:

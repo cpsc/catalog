@@ -68,8 +68,6 @@ security:
     - risk: An HTTPScaledObject can claim another tenant's hostname.
       mitigation: Admit only hosts the namespace's own HTTPRoutes serve.
 
-leftovers: [customresourcedefinitions]
-
 upgradeNotes:
   - versions: "<1.0.0"
     note: HTTPScaledObject fields change between minor versions; read the release notes before upgrading.
