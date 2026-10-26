@@ -1,10 +1,10 @@
 ---
 title: 新增範本
-description: 建立符合範本標準的範本，完成本機檢查並提交 Pull Request。
+description: 建立符合標準的範本，完成本機檢查後提交 Pull Request。
 source: "c4a5cf21771e"
 ---
 
-參考類似的範本建立檔案，加入煙霧測試（smoke check）並完成本機檢查，再提交 Pull Request。
+參考類似的範本建立檔案，加入煙霧測試（smoke check）。完成本機檢查後，再提交 Pull Request。
 
 <Steps>
 
@@ -12,9 +12,9 @@ source: "c4a5cf21771e"
 
 ### 建立範本檔案
 
-參考類似的範本，建立 `templates/<id>/template.yaml` 和 `manifests.yaml`。檔案結構見[範本檔案格式](../reference/template-format.mdx)。
+參考類似的範本，建立 `templates/<id>/template.yaml` 和 `manifests.yaml`。檔案結構請參考[範本檔案格式](../reference/template-format.mdx)。
 
-範本 ID 使用小寫單字，以連字號連接，長度最多 49 個字元。
+範本 ID 請使用小寫單字，字之間用連字號相連，最長 49 個字元。
 
 </Step>
 
@@ -29,7 +29,7 @@ source: "c4a5cf21771e"
 - 為沒有登入功能的服務加入入站 NetworkPolicy。
 - 設定資源上限。
 - 為有狀態的資料提供備份。
-- 如實說明擴展限制。
+- 如實說明擴充限制。
 
 </Step>
 
@@ -37,7 +37,7 @@ source: "c4a5cf21771e"
 
 ### 加入煙霧測試
 
-加入資源條件檢查，以及 HTTP 或 SQL 檢查，確認應用程式會回應。
+加入資源條件檢查，以及 HTTP 或 SQL 檢查，確認應用程式能正常回應。
 
 </Step>
 
@@ -45,7 +45,7 @@ source: "c4a5cf21771e"
 
 ### 在本機檢查
 
-準備 `values.json`。內容須為 JSON 物件，並為範本要求的每個輸入提供值。
+準備 `values.json`，內容必須是 JSON 物件。範本要求的每個輸入都必須填入值。
 
 執行以下指令：
 

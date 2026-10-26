@@ -4,28 +4,28 @@ description: 經過測試的 Kubernetes 元件與應用程式範本，附版本�
 source: "db9fbcaf722c"
 ---
 
-Zeabur Catalog 是一份在 CI 實際安裝並測試過的資料，分成元件和範本兩部分。每次發行都會發布一個簽章過的套件包，任何工具都能讀取它，產生 `helm install` 指令、Flux 或 Argo CD 清單、k3s 的 `HelmChart` 物件，或範本安裝。
+Zeabur Catalog 收錄了在 CI 中實際安裝並測試過的元件和範本。每次發行都會提供一個已簽章的套件包。任何工具都能讀取套件包，產生 `helm install` 指令、Flux 或 Argo CD 清單、k3s 的 `HelmChart` 物件，或安裝範本。
 
-- **元件**由叢集管理員在每個叢集安裝一次，例如 Ingress、憑證、指標和資料庫 operator。每種用途都寫明採用哪個上游 chart、哪個版本、哪些設定，以及原因。
-- **範本**由專案成員安裝到單一 Namespace，例如 n8n、Dify、WordPress 和 PostgreSQL。範本固定映像檔，設定資源要求與上限，可行時以 Restricted Pod Security Standard 執行，並說明如何擴充、備份資料，以及升級前要檢查什麼。範本用 `requires` 指名需要的元件。
+- **元件**由叢集管理員在每個叢集安裝一次，例如 Ingress、憑證、指標和資料庫 operator。每種用途都會寫明採用的上游 chart、版本、設定，以及選擇的原因。
+- **範本**由專案成員安裝到單一 Namespace，例如 n8n、Dify、WordPress 和 PostgreSQL。範本會固定映像檔，設定資源要求與上限，並盡可能遵守 Restricted Pod Security Standard。範本也會說明如何擴充、備份資料，以及升級前要檢查什麼，並用 `requires` 列出需要的元件。
 
 ## 我想部署一個範本
 
-驗證版本的簽章，渲染範本的物件，產生密碼並套用到叢集。
+先驗證版本簽章，再渲染範本的物件、產生密碼，最後套用到叢集。
 
 [用 catalog 指令部署範本](get-started/deploy-a-template.mdx)
 
 ## 我想知道有哪些內容
 
-[元件清單](reference/components.mdx)列出每個元件在單節點與多節點的預設狀態，[範本清單](reference/templates.mdx)列出所有應用程式範本。不同 Kubernetes 發行版的差異見[各發行版的差異](reference/distributions.mdx)。
+[元件清單](reference/components.mdx)列出每個元件在單節點與多節點叢集中的預設狀態。[範本清單](reference/templates.mdx)列出所有應用程式範本。想了解各種 Kubernetes 發行版有什麼不同，可以檢視[各發行版的差異](reference/distributions.mdx)。
 
 ## 我想在自己的工具讀取 catalog
 
-固定一個版本，驗證簽章，再讀 `index.json`。見[版本與套件包](reference/releases.mdx)，檔案格式見[元件檔案格式](reference/component-format.mdx)與[範本檔案格式](reference/template-format.mdx)。
+先固定一個版本，驗證簽章，再讀取 `index.json`。詳細步驟請看[版本與套件包](reference/releases.mdx)。檔案格式請看[元件檔案格式](reference/component-format.mdx)與[範本檔案格式](reference/template-format.mdx)。
 
 ## 我想新增元件或範本
 
-先看[新增元件](contribute/add-component.mdx)或[新增範本](contribute/add-template.mdx)，範本要符合[範本標準](reference/template-standards.mdx)。CI 的檢查內容見[測試與 CI](contribute/tests.mdx)。
+先看[新增元件](contribute/add-component.mdx)或[新增範本](contribute/add-template.mdx)。範本要符合[範本標準](reference/template-standards.mdx)。想了解 CI 會檢查哪些內容，請看[測試與 CI](contribute/tests.mdx)。
 
 ## 檔案怎麼放
 

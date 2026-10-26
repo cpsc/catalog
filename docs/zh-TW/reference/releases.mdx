@@ -1,16 +1,16 @@
 ---
 title: 版本與套件包
-description: 固定 Zeabur Catalog 版本、驗證 Sigstore 簽章，並讀取 index.json，或從指定 commit 建置版本產物。
+description: 固定 Zeabur Catalog 版本、驗證 Sigstore 簽章，再讀取 index.json，或從指定 commit 建置版本產物。
 source: "94d7e744e570"
 ---
 
-打上 `vX.Y.Z` tag 會發布 `index.json`、`bundle.tar.gz`、`checksums.txt`，以及各自的 Sigstore 簽章套件。使用 Zeabur Catalog 的工具應固定一個版本，驗證後再讀取 `index.json`。
+打上 `vX.Y.Z` tag 後，就會發布 `index.json`、`bundle.tar.gz`、`checksums.txt`，以及各自的 Sigstore 簽章套件。使用 Zeabur Catalog 的工具應固定使用一個版本，驗證後再讀取 `index.json`。
 
 ## 版本產物
 
 | 檔案 | 內容 |
 | --- | --- |
-| `index.json` | 所有元件及其各個 profile 的安裝順序與量測資料、各個 capability 的預設啟用（recommended）元件、所有範本及其量測資料、資源預算與 Kubernetes 版本。profile 是 `single-node` 或 `multi-node` 的設定組合；capability 是用途類別。 |
+| `index.json` | 包含所有元件在各個 profile 下的安裝順序與量測資料、各個 capability 預設啟用（recommended）的元件、所有範本及其量測資料、資源預算與 Kubernetes 版本。profile 是 `single-node` 或 `multi-node` 的設定組合。capability 是用途類別。 |
 | `bundle.tar.gz` | 套件包（bundle），包含索引、交叉檢查資料、元件、範本及相關檔案。 |
 | `checksums.txt` | 檔案的檢查碼。 |
 
@@ -40,11 +40,11 @@ cosign verify-blob index.json --bundle index.json.sigstore.json \
 
 驗證後，工具讀取 `index.json`。只有不相容的變更才會改動 `indexVersion`。
 
-安裝元件時，工具執行 `detection`，依叢集的 profile 提供預設啟用（recommended）的元件，並向使用者取得各元件的 `inputs`。接著依 `installOrder` 產生安裝內容，將 `contributes` 合併到對應目標。
+安裝元件時，工具先執行 `detection`，再根據叢集使用的 profile，提供預設啟用（recommended）的元件。接著，工具向使用者取得各元件的 `inputs`，依 `installOrder` 產生安裝內容，再將 `contributes` 合併到對應目標。
 
-部署範本時，工具檢查叢集是否具備 `requires` 列出的所有需求，再向使用者取得範本輸入值，並將其餘自動產生的值寫入 Secret。接著依專案的 Namespace 渲染並套用 `manifests.yaml`。
+部署範本時，工具先檢查叢集是否符合 `requires` 列出的所有需求，再向使用者取得範本輸入值。工具會將其餘自動產生的值寫入 Secret，接著依專案的 Namespace 渲染並套用 `manifests.yaml`。
 
-部署操作見[部署範本](../get-started/deploy-a-template.mdx)。
+部署步驟請見[部署範本](../get-started/deploy-a-template.mdx)。
 
 </Step>
 
@@ -58,7 +58,7 @@ cosign verify-blob index.json --bundle index.json.sigstore.json \
 nix build .#release
 ```
 
-依 `flake.nix`，`release` 輸出包含：
+依照 `flake.nix` 的設定，`release` 會輸出：
 
 - `index.json`
 - `crosscheck.json`
@@ -77,4 +77,4 @@ nix build .#release
 - `LICENSE`
 - `README.md`
 
-這個指令會建置與發布版本逐位元組相同的產物。工具可先從尚未發布的 commit 建置，等該 commit 發布後，再與已簽章的版本比對。
+這個指令建置的產物會與發布版本逐位元組相同。工具可以先從尚未發布的 commit 建置產物，等該 commit 發布後，再與已簽章的版本比對。

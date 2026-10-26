@@ -4,7 +4,7 @@ description: 了解各層 CI 的執行時機與檢查內容，並設定範本測
 source: "813a0ee78be7"
 ---
 
-L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執行；L2 在每晚（nightly）與發行前（release 工作流程）執行。各層分工檢查，前一層沒涵蓋的項目會在後續層級執行。你也能用 `catalog e2e -tier l0|l1|l2` 執行與 CI 相同的測試。
+L0 在每個 pull request 執行。L1 在合併佇列與合併到 `main` 後執行。L2 每晚（nightly）與發行前（release 工作流程）都會執行。各層分工檢查，後續層級會補上前一層沒涵蓋的項目。你也能用 `catalog e2e -tier l0|l1|l2` 執行與 CI 相同的測試。
 
 ## 開始前
 
@@ -12,11 +12,11 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 - L1 與 L2 會建立 kind 叢集，需要 Linux 與 Docker。加上 `-cluster current`，就會改用 `KUBECONFIG` 指定的叢集。
 - 執行 KubeSolo 測試需要 Linux 主機與 root 權限。
 
-一般測試使用 `single-node` 或 `multi-node` profile，也就是各自的設定組合。
+一般測試使用 `single-node` 或 `multi-node` profile，兩者各有一組設定。
 
 ## L0：檢查每個 pull request
 
-`ci.yml` 以單一 job 依序執行下列檢查。
+`ci.yml` 用單一 job 依序執行下列檢查。
 
 <Steps>
 
@@ -32,7 +32,7 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 
 ### 驗證檔案與範本需求
 
-依照各檔案的 schema 驗證所有檔案，並確認每個範本的 `requires` 都能在兩種 profile 解析。
+依照各檔案的 schema 驗證所有檔案，並確認兩種 profile 都能解析每個範本的 `requires`。
 
 </Step>
 
@@ -53,7 +53,7 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 
 每種 profile 各渲染兩次，兩次輸出必須完全一致。
 
-接著，針對 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 列出的每個 Kubernetes 版本，用 kubeconform 驗證輸出。自訂資源會依照同次渲染的 CRD 驗證。
+接著，針對 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 列出的每個 Kubernetes 版本，用 kubeconform 驗證輸出。自訂資源則依照同次渲染的 CRD 驗證。
 
 </Step>
 
@@ -61,7 +61,7 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 
 ### 檢查範本渲染結果
 
-使用測試輸入渲染每個範本，再檢查安全規則、上游 Pod Security 規則與 kubeconform 驗證結果。
+用測試輸入渲染每個範本，再檢查安全規則、上游 Pod Security 規則與 kubeconform 驗證結果。
 
 </Step>
 
@@ -73,7 +73,7 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 
 接著，用 `kubectl apply --dry-run=server` 將兩種 profile 的所有元件與所有範本渲染結果送到 API server。API server 會檢查欄位、預設值、CEL 規則與 Pod Security，不會執行工作負載。
 
-每個範本的 Namespace 都會以自身的 enforce 等級產生警告。只要出現警告，該範本的測試就會失敗。
+每個範本的 Namespace 都會依照自己的 enforce 等級產生警告。只要出現警告，該範本的測試就會失敗。
 
 </Step>
 
@@ -86,13 +86,13 @@ L0 在每個 pull request 執行；L1 在合併佇列與合併到 `main` 後執�
 - 有變更的元件與範本。
 - 會安裝變更元件的元件與範本。
 
-共用相依元件的測試會共用叢集，相依元件在每個叢集只安裝一次。元件完成煙霧測試後就會解除安裝，除非同一叢集後續的測試仍需要它。
+如果多個測試需要相同的相依元件，就會共用叢集。相依元件在每個叢集只安裝一次。元件完成煙霧測試後就會解除安裝，除非同一叢集後續的測試仍需要它。
 
 只要變更涉及 `config/`、`tools/`、flake 或工作流程，L1 就會測試所有項目。
 
 ## L2：測試升級、資源用量與清理
 
-`nightly.yml` 與 `release.yml` 會呼叫 `e2e.yml`，在每晚與每次發行前執行 L2。
+`nightly.yml` 與 `release.yml` 會呼叫 `e2e.yml`，每晚與每次發行前都會執行 L2。
 
 L2 會在 amd64 與 arm64 上，為每個元件、每種 profile 建立新的 kind 叢集。`single-node` 使用單節點，`multi-node` 使用三節點。
 
@@ -104,7 +104,7 @@ L2 會在 amd64 與 arm64 上，為每個元件、每種 profile 建立新的 ki
 
 先安裝相依元件。
 
-如果最新發行版本中的元件版本與待測版本不同，就先安裝最新發行版本中的版本，再升級到待測版本。
+如果最新發行版本中的元件版本與待測版本不同，就先安裝最新發行版本中的元件，再升級到待測版本。
 
 </Step>
 
@@ -128,33 +128,33 @@ L2 會在 amd64 與 arm64 上，為每個元件、每種 profile 建立新的 ki
 
 ### 需要額外憑證的元件
 
-[`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 的 `unready` 列出需要 CI 未持有憑證的元件。
+有些元件需要額外的認證資訊，但 CI 沒有這些資訊。[`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 中的 `unready` 列出了這些元件。
 
-L2 安裝這些元件時不等待就緒，接著執行煙霧測試並解除安裝，不量測資源用量。
+L2 安裝這些元件後，不會等待它們就緒，就會執行煙霧測試並解除安裝，也不會量測資源用量。
 
 ### 範本與資源預算
 
-L2 會在單節點 amd64 叢集安裝每個範本及其需要的元件，執行煙霧測試，再用相同的取樣方式量測範本 Namespace 內 Pod 的閒置記憶體與 CPU 用量。
+L2 會在單節點 amd64 叢集安裝每個範本及其所需元件，再執行煙霧測試。接著，L2 會量測範本 Namespace 內各 Pod 閒置時的記憶體與 CPU 用量，取樣方式與前述相同。
 
 範本量測結果存放在 `measurements/templates/<id>.json`。
 
-L2 也會檢查 amd64 上 `single-node` profile 的預設啟用元件總用量，確認符合 [`config/budget.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/budget.yaml) 的預算。
+L2 也會檢查 amd64 上 `single-node` profile 所有預設啟用元件的總用量，確認未超過 [`config/budget.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/budget.yaml) 設定的預算。
 
 `nightly.yml` 會建立 pull request，更新 `measurements/`。你也能手動執行這個工作流程，立即取得量測結果。Renovate 則會針對每個新的上游版本與映像檔 digest 建立 pull request。
 
 ### KubeSolo 測試
 
-使用 `-profile kubesolo` 時，測試會在 Linux 主機上安裝 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 固定的 KubeSolo 與 helm-controller 版本，並核對校驗碼。
+使用 `-profile kubesolo` 時，測試會在 Linux 主機上安裝 KubeSolo 與 helm-controller，版本固定為 [`config/kubernetes.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/kubernetes.yaml) 指定的版本，並核對校驗碼。
 
 接著，測試會使用 `single-node` 的設定值，針對該檔案列出的 capability（用途類別）執行 L2：`ingress`、`certificates` 與 `container-registry`。
 
-KubeSolo 測試不執行範本，因為範本需要 NetworkPolicy。元件的 `distributions` 若未列出 `kubesolo`，也不會執行。
+KubeSolo 測試不執行範本測試，因為範本需要 NetworkPolicy。如果元件的 `distributions` 未列出 `kubesolo`，也不會測試該元件。
 
-量測結果與 kind 的結果放在一起，以 `kubesolo-<architecture>-<version>` 作為識別鍵。
+量測結果與 kind 的結果放在一起，識別鍵為 `kubesolo-<architecture>-<version>`。
 
 ## 設定範本測試輸入
 
-範本測試從 [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 取得輸入值，不需要儲存庫 secrets，因此 pull request 也會完整執行範本測試。
+範本測試從 [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 取得輸入值，不需要儲存庫機密，因此 pull request 也會完整執行範本測試。
 
 <Steps>
 
@@ -164,10 +164,10 @@ KubeSolo 測試不執行範本，因為範本需要 NetworkPolicy。元件的 `d
 
 在 `config/e2e.yaml` 設定：
 
-- `templateInputs`：提供給所有宣告該輸入的範本。
-- `templates.<id>`：提供給單一範本的輸入值、測試前要先套用到 `templates-e2e-<id>` 的物件，以及要略過的煙霧測試與原因。預先套用的物件可包含輸入值指定的 Secret。
+- `templateInputs`：提供輸入值給所有宣告該輸入的範本。
+- `templates.<id>`：設定單一範本的輸入值、測試前要套用到 `templates-e2e-<id>` 的物件，以及要略過哪些煙霧測試和略過的原因。如果輸入值指定了 Secret，也可以在這裡設定，讓測試先套用該 Secret。
 
-所有值都是可丟棄的測試資料。
+所有值都是測試資料，用完即可丟棄。
 
 </Step>
 
@@ -175,13 +175,13 @@ KubeSolo 測試不執行範本，因為範本需要 NetworkPolicy。元件的 `d
 
 ### 設定物件儲存測試資料
 
-只要輸入值使用 `.S3`，測試就會在 `templates-e2e-s3` 啟動 SeaweedFS（`object-storage/seaweedfs-operator`），使用測試 CA，並在 TCP 443 提供 HTTPS。備份與物件儲存資料都會送到這裡。
+只要輸入值使用 `.S3`，測試就會在 `templates-e2e-s3` 啟動 SeaweedFS（`object-storage/seaweedfs-operator`）。SeaweedFS 使用測試 CA，並在 TCP 443 提供 HTTPS。備份與物件儲存資料都會送到這裡。
 
-範本 Namespace 內的 `e2e-s3` Secret 會保存存取憑證，以及名為 `ca.crt` 的 CA 憑證。
+範本 Namespace 內的 `e2e-s3` Secret 會儲存存取認證資訊，以及名為 `ca.crt` 的 CA 憑證。
 
-範本使用 `backupCASecret` 這類選用輸入接收 CA。無法使用自訂 CA 的範本只會略過對應的煙霧測試。
+範本可用 `backupCASecret` 這類選用輸入接收 CA。如果範本無法使用自訂 CA，測試就只會略過與自訂 CA 相關的煙霧測試。
 
-要改用其他儲存服務，修改 `config/e2e.yaml` 中該範本的輸入值。
+要改用其他儲存服務，請修改 `config/e2e.yaml` 中該範本的輸入值。
 
 </Step>
 
@@ -189,15 +189,15 @@ KubeSolo 測試不執行範本，因為範本需要 NetworkPolicy。元件的 `d
 
 ## 確認結果
 
-每個層級都會輸出各階段的耗時。L0 會啟動自己的 API server；L1 與 L2 會建立自己的 kind 叢集，各自使用獨立的 kubeconfig。
+每個層級都會輸出各階段的耗時。L0 會啟動自己的 API server。L1 與 L2 會建立自己的 kind 叢集，各自使用獨立的 kubeconfig。
 
-測試結束後，各層級會刪除自行建立的測試環境。加上 `-keep` 可保留環境。
+測試結束後，各層級會刪除自己建立的測試環境。加上 `-keep` 可保留環境。
 
 ## 遇到問題
 
 | 畫面或結果 | 接著處理 |
 | --- | --- |
 | L0 因範本 Namespace 的 Pod Security 警告而失敗 | 依照警告修正範本。警告會讓範本測試失敗。 |
-| 元件列在 `unready`，沒有資源量測結果 | 檢查 `config/e2e.yaml`。這些元件需要 CI 未持有的憑證，測試不量測資源用量。 |
+| 元件列在 `unready`，沒有資源量測結果 | 檢查 `config/e2e.yaml`。這些元件需要額外的認證資訊，但 CI 沒有這些資訊，因此測試不量測資源用量。 |
 | KubeSolo 沒有執行某個元件 | 檢查元件的 `distributions` 是否包含 `kubesolo`。 |
 | 需要讓節點從映像檔鏡像站拉取映像檔 | 設定 `ZEABUR_REGISTRY_MIRRORS`，值的格式為 `docker.io=http://mirror:5001,ghcr.io=...`。 |

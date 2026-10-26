@@ -1,14 +1,14 @@
 ---
 title: 範本檔案格式
-description: 了解 template.yaml 的欄位與 manifests.yaml 的替換規則，編寫範本檔案。
+description: 撰寫範本檔案時，如何設定 template.yaml 欄位，以及在 manifests.yaml 中替換欄位。
 source: "a19f44fcb164"
 ---
 
-範本由 `template.yaml` 與 `manifests.yaml` 組成。你在 `template.yaml` 定義範本資訊，並在 `manifests.yaml` 使用允許的欄位替換。
+範本包含 `template.yaml` 和 `manifests.yaml`。你在 `template.yaml` 定義範本資訊，在 `manifests.yaml` 中替換允許的欄位。
 
 ## template.yaml
 
-以下是精簡範例。完整欄位請查閱 [範本 schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/template.schema.json)，範本要求請參考[範本標準](./template-standards.mdx)。
+以下是精簡範例。完整欄位請查閱[範本 schema](https://github.com/zeabur-oss/catalog/blob/main/schema/v1/template.schema.json)。範本需要符合哪些要求，請參考[範本標準](./template-standards.mdx)。
 
 ```yaml
 apiVersion: catalog.zeabur.com/v1
@@ -47,10 +47,10 @@ smoke: []            # resource condition, then an HTTP or SQL check
 
 ## manifests.yaml
 
-`manifests.yaml` 只允許欄位替換，規則如下：
+`manifests.yaml` 只允許替換欄位，規則如下：
 
-- 可用的替換欄位只有 `{{ .Namespace }}`、`{{ .Domain }}`、`{{ .ClusterIssuer }}`，以及非自動產生輸入值的 `{{ .Inputs.<name> }}`。
-- 不允許條件、函式、管線或空白裁切標記。
-- 未提供的輸入值會使用 `default`；沒有 `default` 時，值為空。
-- 範本需要選項時，使用設有 `default` 的輸入欄位。
+- 只能替換 `{{ .Namespace }}`、`{{ .Domain }}`、`{{ .ClusterIssuer }}`，以及非自動產生輸入值的 `{{ .Inputs.<name> }}`。
+- 不可使用條件、函式、管線或空白裁切標記。
+- 未提供輸入值時，會使用 `default`。如果沒有設定 `default`，值就會留空。
+- 範本需要提供選項時，請使用輸入欄位，並設定 `default`。
 - 渲染後的物件必須參照 Secret，不得包含自動產生的值。

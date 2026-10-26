@@ -1,18 +1,18 @@
 ---
 title: 元件清單
-description: 查看各元件的上游、單節點與多節點預設狀態，以及使用限制。
+description: 檢視各元件的上游、單節點與多節點的預設狀態，以及使用限制。
 source: "e09fc4f50cf0"
 ---
 
-元件是叢集管理員在每個叢集安裝一次的軟體。Zeabur Catalog 依 capability（用途類別）寫明採用哪個上游 chart、哪個版本、哪些設定，以及選擇原因。你可以依下表查看各元件在單節點與多節點的預設狀態。
+元件是叢集管理員在每個叢集只需安裝一次的軟體。Zeabur Catalog 會依 capability（用途類別）列出採用的上游 chart、版本、設定，以及選擇原因。下表列出各元件在單節點與多節點叢集中的預設狀態。
 
-各 profile（`single-node` 或 `multi-node` 的設定組合）使用以下狀態：
+每個 profile（`single-node` 或 `multi-node` 的設定組合）都用以下狀態標示元件：
 
 - 預設啟用（`recommended`）：預設開啟。
 - 選用（`optional`）：提供選項，但預設關閉。
 - 不支援（`unsupported`）：不提供選項。
 
-各元件檔案的 `detection` 規則會找出既有安裝，供系統重複使用。
+系統會依照各元件檔案中的 `detection` 規則，找出已安裝的元件並重複使用。
 
 | Capability | 上游 | 單節點 | 多節點 | 備註 |
 | --- | --- | --- | --- | --- |
@@ -20,10 +20,10 @@ source: "e09fc4f50cf0"
 | config-reload | Stakater Reloader | 選用 | 選用 | |
 | container-registry | zot | 選用 | 選用 | |
 | databases | CloudNativePG | 選用 | 選用 | |
-| databases | Dragonfly Operator | 選用 | 選用 | 伺服器授權為 `BUSL-1.1`，需自行選擇啟用 |
+| databases | Dragonfly Operator | 選用 | 選用 | 伺服器採用 `BUSL-1.1` 授權，需自行選擇啟用 |
 | databases | MariaDB Operator | 選用 | 選用 | |
 | databases | MOCO | 選用 | 選用 | |
-| databases | Percona Operator for MongoDB | 選用 | 選用 | 伺服器授權為 `SSPL-1.0`，需自行選擇啟用 |
+| databases | Percona Operator for MongoDB | 選用 | 選用 | 伺服器採用 `SSPL-1.0` 授權，需自行選擇啟用 |
 | event-autoscaling | KEDA HTTP Add-on | 選用 | 選用 | `beta` |
 | event-autoscaling | KEDA | 選用 | 預設啟用 | |
 | external-secrets | External Secrets Operator | 選用 | 選用 | |
