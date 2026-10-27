@@ -1,7 +1,7 @@
 ---
 title: 測試與 CI
 description: 了解各層 CI 的執行時機與檢查內容，並設定範本測試輸入。
-source: "813a0ee78be7"
+source: "02d9efdc51b9"
 ---
 
 L0 在每個 pull request 執行。L1 在合併佇列與合併到 `main` 後執行。L2 每晚（nightly）與發行前（release 工作流程）都會執行。各層分工檢查，後續層級會補上前一層沒涵蓋的項目。你也能用 `catalog e2e -tier l0|l1|l2` 執行與 CI 相同的測試。
@@ -130,7 +130,7 @@ L2 會在 amd64 與 arm64 上，為每個元件、每種 profile 建立新的 ki
 
 有些元件需要額外的認證資訊，但 CI 沒有這些資訊。[`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) 中的 `unready` 列出了這些元件。
 
-L2 安裝這些元件後，不會等待它們就緒，就會執行煙霧測試並解除安裝，也不會量測資源用量。
+L2 安裝這些元件後，不會等待它們就緒，就會執行煙霧測試並解除安裝。
 
 ### 範本與資源預算
 
@@ -189,7 +189,7 @@ KubeSolo 測試不執行範本測試，因為範本需要 NetworkPolicy。如果
 
 ## 確認結果
 
-每個層級都會輸出各階段的耗時。L0 會啟動自己的 API server。L1 與 L2 會建立自己的 kind 叢集，各自使用獨立的 kubeconfig。
+L0 會啟動自己的 API server。L1 與 L2 會建立自己的 kind 叢集，各自使用獨立的 kubeconfig。
 
 測試結束後，各層級會刪除自己建立的測試環境。加上 `-keep` 可保留環境。
 

@@ -9,7 +9,7 @@ After you verify the release signature, use the `catalog` command to render and 
 
 - Build the `catalog` command from a source checkout you trust, using the tag you plan to deploy. Don't run unverified downloads.
 - Install every component listed in the template's `requires`, all at the same version.
-- Use a CNI that enforces NetworkPolicy. The installer isolates each project's Namespace; templates don't add a default-deny policy for all traffic. Only services without their own login mechanism, such as code sandboxes, include an ingress policy. Templates don't restrict outbound traffic.
+- Use a CNI that enforces NetworkPolicy. The installer isolates each project's Namespace. Templates don't restrict outbound traffic.
 - Set a StorageClass as the default. Templates don't specify a StorageClass, so volumes use the default. Without a default StorageClass, PersistentVolumeClaims remain `Pending`.
 - If the template requires a domain, prepare a cert-manager ClusterIssuer first.
 - Install each template only once per Namespace. Object names within a template are fixed.
@@ -44,7 +44,7 @@ go run ./tools/cmd/catalog template render -namespace app \
   -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
 ```
 
-`inputs.json` is a JSON object that provides the inputs the template requires as string values. Rendering checks every required input. Prepare object storage buckets and credentials beforehand.
+`inputs.json` is a JSON object that provides the inputs the template requires as string values. Prepare object storage buckets and credentials beforehand.
 
 Generate the template's passwords and keys as Secrets, then apply the objects:
 

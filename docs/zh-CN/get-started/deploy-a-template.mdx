@@ -1,7 +1,7 @@
 ---
 title: 用 catalog 命令部署模板
 description: 验证版本签名、准备集群，渲染并应用模板，完成部署。
-source: "a5994d7d1629"
+source: "acfb4344d60b"
 ---
 
 验证版本签名后，用 `catalog` 命令渲染并应用一个模板，再运行冒烟测试（smoke check）和你自己的测试，确认部署结果。
@@ -10,7 +10,7 @@ source: "a5994d7d1629"
 
 - 在你信任的源码 checkout 上，用你要部署的 tag 构建 `catalog` 命令。不要运行未经验证的下载文件。
 - 安装模板 `requires` 列出的每个组件，全部使用同一个版本。
-- 使用能落实 NetworkPolicy 的 CNI。安装程序会隔离各项目的 Namespace；模板本身不会添加默认拒绝所有流量的策略。只有代码沙箱这类没有自身登录机制的服务，才会附带入站流量策略。模板不限制出站流量。
+- 使用能落实 NetworkPolicy 的 CNI。安装程序会隔离各项目的 Namespace。模板不限制出站流量。
 - 将一个 StorageClass 设为默认。模板不指定 StorageClass，卷会使用默认值。没有默认 StorageClass 时，PersistentVolumeClaim 会停留在 `Pending`。
 - 如果模板需要域名，先准备好 cert-manager ClusterIssuer。
 - 每个 Namespace 内，同一个模板只能安装一次。模板内的对象名称固定。
@@ -45,7 +45,7 @@ go run ./tools/cmd/catalog template render -namespace app \
   -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
 ```
 
-`inputs.json` 是一个 JSON 对象，以字符串值提供模板要求的输入。渲染时会检查每个必填输入。对象存储桶和凭证必须提前准备好。
+`inputs.json` 是一个 JSON 对象，以字符串值提供模板要求的输入。对象存储桶和凭证必须提前准备好。
 
 为模板生成包含密码和密钥的 Secret，再应用对象：
 

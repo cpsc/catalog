@@ -1,10 +1,10 @@
 ---
 title: 模板标准
 description: 按照模板标准新增或修改 Zeabur Catalog 模板，检查安全、网络、数据、升级与测试配置。
-source: "988bdbdabd81"
+source: "115a9381d675"
 ---
 
-Zeabur Catalog 的每个模板都必须符合以下规则。新增或修改模板时，使用 `catalog validate`、`catalog template lint` 和安装测试检查其中多项规则，其余规则由你逐项确认。各工具的检查范围以下列规则中的说明为准。查阅上游文档时，请对照模板固定使用的确切版本。
+Zeabur Catalog 的每个模板都必须符合以下规则。新增或修改模板时，使用 `catalog validate`、`catalog template lint` 和安装测试检查其中多项规则，其余规则由你逐项确认。查阅上游文档时，请对照模板固定使用的确切版本。
 
 ## `template.yaml`
 
@@ -42,8 +42,8 @@ Zeabur Catalog 的每个模板都必须符合以下规则。新增或修改模�
 - 每个 Pod 都必须加上 `templates.zeabur.com/template: <id>` 标签。operator 管理的 Pod 必须在自定义资源中设置标签：CloudNativePG 使用 `inheritedMetadata`，Dragonfly 与 MariaDB 使用 `podMetadata`，Percona 使用 `replsets[].labels`。
 - 模板不得附带默认拒绝流量或针对单个 Pod 的 NetworkPolicy。安装程序会使用基础策略隔离不同项目的 Namespace，这就是默认的隔离边界。
 - 没有登录机制或自身密钥的组件属于例外，必须配置只允许所属应用连入的 ingress NetworkPolicy。例如未设置密码的 Redis 或 Dragonfly、未设置密钥的 Meilisearch 或 Qdrant，以及运行他人代码的沙箱。必须将该服务列在 `security.unauthenticated` 中；`catalog template lint` 会要求提供 ingress NetworkPolicy，且其 `podSelector` 必须指定该服务。`security` 的风险说明必须解释这项策略存在的原因。运行不受信任代码的组件也可以将出站流量限制为 DNS 与自身的对等服务。
-- 除了上述情况，不得限制出站流量。应用会调用模板无法预先掌握的模型供应商、webhook、邮件服务器与 S3 存储服务，而 NetworkPolicy 匹配 IP 范围，不匹配主机名。
-- 每个 NetworkPolicy，以及其中位于模板 Namespace 内的每个对等端，都必须使用上述标签选择 Pod。其他应用可以共用同一个 Namespace，模板的策略不得改变它们的流量。
+- 除了上述情况，不得限制出站流量。
+- 每个 NetworkPolicy，以及其中位于模板 Namespace 内的每个对等端，都必须使用上述标签选择 Pod。
 - 需要在 Namespace 内加强隔离的用户可以自行新增 NetworkPolicy。例如，下列配置只允许带有 `role=frontend` 标签的 Pod 连入指定模板的 Pod：
 
   ```yaml

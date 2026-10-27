@@ -1,7 +1,7 @@
 ---
 title: 组件文件格式
 description: 按照通用结构和组件字段编写 YAML，并用 digest 固定安装内容。
-source: "0f94d58c7b90"
+source: "59943d6797b4"
 ---
 
 把组件文件放在 `components/<capability>/<upstream>.yaml`，每个 capability（用途类别）与上游的组合各用一个文件。文件使用 YAML，包含通用结构、安装内容和配置。路径就是 ID，例如 `components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`。
@@ -78,7 +78,7 @@ leftovers: []     # what the upstream keeps on uninstall (e.g. CRDs)
 - HTTP chart 的 `chartDigest` 使用仓库 `index.yaml` 中对应条目的 `digest`，也就是 `.tgz` 的 sha256。
 - OCI chart 的 `chartDigest` 使用 manifest digest，也就是 `helm push` 输出的值。`helm pull <chart>:<version>@sha256:…` 会检查这个值。
 - `urlDigests` 使用每个下载文件的 sha256，顺序必须与 URL 一致。
-- 镜像在 `values` 中使用 `<tag>@sha256:<digest>`，也包括 chart 通过参数传给 operator 的镜像。chart 无法接受 digest 时，要在 `unpinnedImages` 中列出镜像，并用注释说明原因。URL 安装条目不受这项要求限制，因为 `urlDigests` 已固定上游提供的内容。
+- 镜像在 `values` 中使用 `<tag>@sha256:<digest>`，也包括 chart 通过参数传给 operator 的镜像。chart 无法接受 digest 时，要在 `unpinnedImages` 中列出镜像，并用注释说明原因。URL 安装条目不受这项要求限制。
 
 Renovate 会更新镜像与 OCI chart 的标签和 digest。它无法读取 HTTP chart 或 URL 的 digest。Renovate 更新 `version` 后，`catalog render` 会失败，并输出新的 digest，供你复制填入。
 

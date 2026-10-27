@@ -77,7 +77,7 @@ Every `releases` entry must pin its content with a digest. Zeabur Installer and 
 - For HTTP charts, `chartDigest` uses the `digest` from the corresponding entry in the repository's `index.yaml`, which is the sha256 of the `.tgz`.
 - For OCI charts, `chartDigest` uses the manifest digest, which is the value that `helm push` outputs. `helm pull <chart>:<version>@sha256:…` checks this value.
 - `urlDigests` uses the sha256 of each downloaded file, in the same order as the URLs.
-- Images in `values` use `<tag>@sha256:<digest>`, including images that the chart passes to an operator as arguments. If a chart doesn't accept a digest, list the image in `unpinnedImages` and explain why in a comment. URL installation entries are exempt from this requirement because `urlDigests` already pins the upstream content.
+- Images in `values` use `<tag>@sha256:<digest>`, including images that the chart passes to an operator as arguments. If a chart doesn't accept a digest, list the image in `unpinnedImages` and explain why in a comment. URL installation entries are exempt from this requirement.
 
 Renovate updates image and OCI chart tags and digests. It can't read digests for HTTP charts or URLs. After Renovate updates `version`, `catalog render` fails and outputs the new digest for you to copy into the file.
 

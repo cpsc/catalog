@@ -1,7 +1,7 @@
 ---
 title: 用 catalog 指令部署範本
 description: 驗證版本簽章、準備叢集，再渲染並套用範本，完成部署。
-source: "a5994d7d1629"
+source: "acfb4344d60b"
 ---
 
 先驗證版本簽章，再用 `catalog` 指令渲染並套用範本。最後執行範本的煙霧測試（smoke check），再跑你自己的測試，確認部署結果。
@@ -10,7 +10,7 @@ source: "a5994d7d1629"
 
 - 使用你信任的原始程式碼 checkout，以你要部署的 tag 建置 `catalog` 指令。不要執行未驗證的下載檔。
 - 安裝範本 `requires` 列出的每個元件，全部使用同一個版本。
-- 使用會落實 NetworkPolicy 的 CNI。安裝程式會隔離各專案的 Namespace。範本本身不會加入預設拒絕所有流量的政策，只有程式碼沙盒這類沒有自身登入機制的服務，才會附上入站流量政策。範本不限制對外流量。
+- 使用會落實 NetworkPolicy 的 CNI。安裝程式會隔離各專案的 Namespace。範本不限制對外流量。
 - 把一個 StorageClass 設為預設。範本不指定 StorageClass，磁碟區會使用預設值。沒有預設 StorageClass 時，PersistentVolumeClaim 會停在 `Pending`。
 - 如果範本需要網域，先準備好 cert-manager ClusterIssuer。
 - 每個 Namespace 內，同一個範本只能安裝一次，因為範本內的物件名稱固定。
@@ -45,7 +45,7 @@ go run ./tools/cmd/catalog template render -namespace app \
   -domain app.example.com -cluster-issuer letsencrypt -values inputs.json <id> > plan.yaml
 ```
 
-`inputs.json` 是一個 JSON 物件，範本要求的輸入都要填入字串值。渲染時會檢查每個必填輸入。物件儲存貯體和認證資訊必須事先準備好。
+`inputs.json` 是一個 JSON 物件，範本要求的輸入都要填入字串值。物件儲存貯體和認證資訊必須事先準備好。
 
 產生包含範本密碼和金鑰的 Secret，再套用物件：
 

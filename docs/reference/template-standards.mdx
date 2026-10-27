@@ -3,7 +3,7 @@ title: Template standards
 description: Follow the template standards when adding or updating Zeabur Catalog templates, and check security, networking, data, upgrades, and test configuration.
 ---
 
-Every template in Zeabur Catalog must follow these rules. When you add or update a template, use `catalog validate`, `catalog template lint`, and installation tests to check the rules those tools cover, then review the remaining rules individually. The rules below describe each tool's scope. When you consult upstream documentation, check the exact version pinned in the template.
+Every template in Zeabur Catalog must follow these rules. When you add or update a template, use `catalog validate`, `catalog template lint`, and installation tests to check the rules those tools cover, then review the remaining rules individually. When you consult upstream documentation, check the exact version pinned in the template.
 
 ## `template.yaml`
 
@@ -41,8 +41,8 @@ Every template in Zeabur Catalog must follow these rules. When you add or update
 - Every Pod must have the `templates.zeabur.com/template: <id>` label. For operator-managed Pods, configure labels in the custom resource: use `inheritedMetadata` for CloudNativePG, `podMetadata` for Dragonfly and MariaDB, and `replsets[].labels` for Percona.
 - Templates must not include default-deny or per-Pod NetworkPolicies. The installer uses base policies to isolate project Namespaces from one another. This is the default isolation boundary.
 - Components without a login mechanism or their own key are exceptions. They must have an ingress NetworkPolicy that permits connections only from their application. Examples include Redis or Dragonfly without a password, Meilisearch or Qdrant without a key, and sandboxes that execute other people's code. List the service in `security.unauthenticated`; `catalog template lint` requires an ingress NetworkPolicy whose `podSelector` selects that service. The risk description in `security` must explain why this policy exists. Components that execute untrusted code can also restrict outbound traffic to DNS and their own peers.
-- Don't restrict outbound traffic outside the cases above. Applications call model providers, webhooks, mail servers, and S3 storage services that the template can't know in advance, and NetworkPolicy matches IP ranges rather than hostnames.
-- Every NetworkPolicy, and every peer within it that resides in the template's Namespace, must select Pods with the label above. Other applications can share the same Namespace, and the template's policies must not change their traffic.
+- Don't restrict outbound traffic outside the cases above.
+- Every NetworkPolicy, and every peer within it that resides in the template's Namespace, must select Pods with the label above.
 - Users who need stronger isolation within a Namespace can add their own NetworkPolicies. For example, the following configuration permits only Pods labeled `role=frontend` to connect to the specified template's Pods:
 
   ```yaml

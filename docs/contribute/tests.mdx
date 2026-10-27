@@ -129,7 +129,7 @@ Run smoke checks, then uninstall the component. Any leftover resources fail the 
 
 The `unready` list in [`config/e2e.yaml`](https://github.com/zeabur-oss/catalog/blob/main/config/e2e.yaml) identifies components that require credentials CI doesn't have.
 
-L2 installs these components without waiting for readiness, then runs smoke checks and uninstalls them. It doesn't measure their resource usage.
+L2 installs these components without waiting for readiness, then runs smoke checks and uninstalls them.
 
 ### Templates and resource budgets
 
@@ -188,7 +188,7 @@ To use a different storage service, change the template's input values in `confi
 
 ## Check results
 
-Each tier reports the time spent in each stage. L0 starts its own API server. L1 and L2 create their own kind clusters, each with a separate kubeconfig.
+L0 starts its own API server. L1 and L2 create their own kind clusters, each with a separate kubeconfig.
 
 After testing, each tier deletes the test environment it created. Add `-keep` to retain the environment.
 
