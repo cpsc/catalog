@@ -30,17 +30,17 @@ Zeabur Catalog 是一份在 CI 中实际安装并测试过的数据，分为组�
 ## 文件怎么放
 
 ```text
-components/<capability>/<upstream>.yaml   一個用途搭配一個上游，一個檔案
-templates/<id>/template.yaml              一個應用程式：輸入、服務、安全性、擴充、煙霧測試
-templates/<id>/manifests.yaml             它的 Kubernetes 物件
-schema/v1/                                兩種檔案的 JSON Schema
-config/licenses.yaml                      OSI 核准的 SPDX 識別碼，以及只能選擇啟用的例外
-config/kubernetes.yaml                    Kubernetes 版本，以及 e2e 用的 kind 節點版本
-config/budget.yaml                        單節點的記憶體預算（MiB）
-config/e2e.yaml                           只給測試用的值
-measurements/                             閒置記憶體與 CPU，由 CI 寫入
-tools/                                    `catalog` 指令（Go）
-docs/                                     這份文件
+components/<capability>/<upstream>.yaml   一个用途搭配一个上游，一个文件
+templates/<id>/template.yaml              一个应用：输入、服务、安全、扩容、冒烟测试
+templates/<id>/manifests.yaml             它的 Kubernetes 对象
+schema/v1/                                两种文件的 JSON Schema
+config/licenses.yaml                      OSI 批准的 SPDX 标识符，以及只能选择启用的例外
+config/kubernetes.yaml                    Kubernetes 版本，以及 e2e 用的 kind 节点版本
+config/budget.yaml                        单节点的内存预算（MiB）
+config/e2e.yaml                           只给测试用的值
+measurements/                             空闲内存与 CPU，由 CI 写入
+tools/                                    `catalog` 命令（Go）
+docs/                                     这份文档
 ```
 
 路径就是 ID：`components/ingress/traefik.yaml` 的 ID 是 `ingress/traefik`，`templates/n8n/` 的 ID 是 `n8n`。
