@@ -36,6 +36,10 @@ type Component struct {
 	Requires        []string          `yaml:"requires" json:"requires,omitempty"`
 	Inputs          []Input           `yaml:"inputs" json:"inputs,omitempty"`
 	Releases        []Release         `yaml:"releases" json:"releases"`
+	Provides        *Provides         `yaml:"provides" json:"provides,omitempty"`
+	InternalCRDs    []string          `yaml:"internalCRDs" json:"internalCRDs,omitempty"`
+	Resources       *Resources        `yaml:"resources" json:"resources,omitempty"`
+	NetworkPolicies string            `yaml:"networkPolicies" json:"networkPolicies,omitempty"`
 	Contributes     []Contribution    `yaml:"contributes" json:"contributes,omitempty"`
 	Detection       map[string]any    `yaml:"detection" json:"detection"`
 	Security        map[string]any    `yaml:"security" json:"security"`
@@ -46,12 +50,33 @@ type Component struct {
 	Path string `yaml:"-" json:"-"` // relative to the repository root
 }
 
-// Metadata is the part Components and Templates share.
+// Metadata is a component's name, description and summary.
 type Metadata struct {
 	Name        string `yaml:"name" json:"name"`
 	Description string `yaml:"description" json:"description"`
-	License     string `yaml:"license" json:"license"`
-	Homepage    string `yaml:"homepage" json:"homepage"`
+	Summary     string `yaml:"summary" json:"summary"`
+	// Locales holds the summary in other languages, by language tag.
+	Locales map[string]struct {
+		Summary string `yaml:"summary" json:"summary"`
+	} `yaml:"locales" json:"locales,omitempty"`
+	License  string `yaml:"license" json:"license"`
+	Homepage string `yaml:"homepage" json:"homepage"`
+}
+
+// Provides is what a component offers other software in the cluster.
+type Provides struct {
+	Registry *Registry `yaml:"registry" json:"registry,omitempty"`
+}
+
+// Registry is an OCI registry in the cluster that nodes pull from.
+type Registry struct {
+	Host string    `yaml:"host" json:"host"`
+	CA   SecretRef `yaml:"ca" json:"ca"`
+}
+
+// Resources is what a component needs beyond its measured idle use.
+type Resources struct {
+	WorkMemoryMiB int `yaml:"workMemoryMiB" json:"workMemoryMiB,omitempty"`
 }
 
 type Release struct {

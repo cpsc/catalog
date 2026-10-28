@@ -3,6 +3,7 @@ package catalog
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"slices"
@@ -70,6 +71,9 @@ func Check(root string, cat *Catalog) error {
 				fail(c.Path, "input %s: required, so set default, testValue or generate for CI to install it", in.Name)
 			}
 		}
+		for _, p := range c.provisionProblems() {
+			fail(c.Path, "%s", p)
+		}
 		for _, ct := range c.Contributes {
 			t, ok := cat.Get(ct.Target)
 			if !ok {
@@ -94,6 +98,64 @@ func Check(root string, cat *Catalog) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// provisionProblems checks what provides, internalCRDs, generated inputs and
+// networkPolicies name against the component's own CRDs, inputs and namespaces.
+func (c *Component) provisionProblems() []string {
+	var out []string
+	owns := func(ns string) bool {
+		return slices.ContainsFunc(c.Releases, func(r Release) bool { return r.Namespace == ns })
+	}
+	if r := c.Provides.registry(); r != nil && !owns(r.CA.Namespace) {
+		out = append(out, fmt.Sprintf("provides.registry.ca: %s is none of its namespaces", r.CA.Namespace))
+	}
+	crds := c.detectionCRDs()
+	for _, crd := range c.InternalCRDs {
+		if !slices.Contains(crds, crd) {
+			out = append(out, fmt.Sprintf("internalCRDs: %s is not in detection.crds", crd))
+		}
+	}
+	for _, in := range c.Inputs {
+		if in.Generate == "clusterIP" && in.Path == "" {
+			out = append(out, fmt.Sprintf("input %s: generate clusterIP needs a path", in.Name))
+		}
+	}
+	dec := yaml.NewDecoder(strings.NewReader(c.NetworkPolicies))
+	for {
+		var o struct {
+			Kind     string `yaml:"kind"`
+			Metadata struct{ Name, Namespace string }
+		}
+		if err := dec.Decode(&o); err != nil {
+			if !errors.Is(err, io.EOF) {
+				out = append(out, "networkPolicies: "+err.Error())
+			}
+			break
+		}
+		if o.Kind != "NetworkPolicy" || !owns(o.Metadata.Namespace) {
+			out = append(out, fmt.Sprintf("networkPolicies: %s %s must be a NetworkPolicy in one of its namespaces", o.Kind, o.Metadata.Name))
+		}
+	}
+	return out
+}
+
+func (c *Component) detectionCRDs() []string {
+	list, _ := c.Detection["crds"].([]any)
+	out := make([]string, 0, len(list))
+	for _, v := range list {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func (p *Provides) registry() *Registry {
+	if p == nil {
+		return nil
+	}
+	return p.Registry
 }
 
 // Licenses is config/licenses.yaml.
