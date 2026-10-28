@@ -1,6 +1,7 @@
 # On a semver tag: run L2 (e2e.yml), validate, then build index.json, bundle.tar.gz and
 # checksums.txt with `nix build .#release` (Zeabur builds the same output at its pinned commit),
-# sign all three with cosign keyless (GitHub OIDC) and publish them on the GitHub release.
+# sign all three with cosign keyless (GitHub OIDC) and attach them to a draft release. A maintainer
+# checks the draft and publishes it; releases are immutable once published.
 name: release
 
 on:
@@ -40,7 +41,12 @@ jobs:
           for f in bundle.tar.gz index.json checksums.txt; do
             nix develop .. -c cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"
           done
-      - name: Publish
+      - name: Attach to a draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create '${{ github.ref_name }}' dist/* --title '${{ github.ref_name }}' --generate-notes --verify-tag
+          VERSION: ${{ github.ref_name }}
+        run: |
+          awk -v v="${VERSION#v}" '$0 ~ "^## \\[" v "\\]" { on = 1; next } on && /^## / { exit } on' CHANGELOG.md > notes.md
+          test -s notes.md
+          gh release create "$VERSION" dist/* --title "Zeabur Catalog $VERSION" --notes-file notes.md \
+            --verify-tag --draft --prerelease
