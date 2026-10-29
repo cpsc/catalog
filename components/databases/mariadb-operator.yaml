@@ -133,6 +133,8 @@ security:
     - risk: Without TLS, root password rotation sends the new password in plain text.
       mitigation: Enable tls on each MariaDB before rotating.
 
+leftovers: [persistentvolumeclaims]
+
 smoke:
   - name: standalone
     manifest: |

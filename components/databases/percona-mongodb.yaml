@@ -87,7 +87,7 @@ security:
       mitigation: Show the licence before install; it is opt-in only.
 
 # The chart's crds/ directory: Helm never deletes it.
-leftovers: [customresourcedefinitions]
+leftovers: [customresourcedefinitions, persistentvolumeclaims]
 
 smoke:
   - name: one-member-replset

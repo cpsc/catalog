@@ -116,7 +116,7 @@ security:
       mitigation: Restrict LoadBalancer Services with the same policy used for other workloads.
 
 # The chart annotates its CRDs helm.sh/resource-policy: keep.
-leftovers: [customresourcedefinitions]
+leftovers: [customresourcedefinitions, persistentvolumeclaims]
 
 smoke:
   - name: one-instance-cluster
