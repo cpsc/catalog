@@ -184,10 +184,31 @@ func Load(root string) (*Catalog, error) {
 		}
 		c.Capability = filepath.Base(filepath.Dir(f))
 		c.ID = c.Capability + "/" + strings.TrimSuffix(filepath.Base(f), ".yaml")
+		c.addDefaultAccounts()
 		cat.Components = append(cat.Components, c)
 	}
 	slices.SortFunc(cat.Components, func(a, b *Component) int { return cmp.Compare(a.ID, b.ID) })
 	return cat, nil
+}
+
+// addDefaultAccounts puts releases first that give each of the component's
+// namespaces a default ServiceAccount mounting no token, so a Pod that names no
+// account reaches nothing in the API. kube-system belongs to the distribution.
+func (c *Component) addDefaultAccounts() {
+	var added []Release
+	seen := map[string]bool{"kube-system": true}
+	for _, r := range c.Releases {
+		if seen[r.Namespace] {
+			continue
+		}
+		seen[r.Namespace] = true
+		added = append(added, Release{
+			Name:      "default-account-" + r.Namespace,
+			Namespace: r.Namespace,
+			Manifests: fmt.Sprintf("apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: default\n  namespace: %s\nautomountServiceAccountToken: false\n", r.Namespace),
+		})
+	}
+	c.Releases = append(added, c.Releases...)
 }
 
 // Get returns the component with the given ID.
