@@ -10,6 +10,11 @@ based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `builds/zeabur-builder` installs Zeabur Builder 0.1.1 together with the zot
   registry it pushes to, so the two are added and removed as one component.
 
+### Changed
+
+- The `kubesolo` profile pins KubeSolo v1.2.3, which keeps a Job's `nodeSelector`,
+  and tests the `databases` capability.
+
 ### Removed
 
 - `container-registry/zot`. zot only serves Builder's images and now comes with
